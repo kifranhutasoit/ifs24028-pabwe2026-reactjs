@@ -1,29 +1,33 @@
 {
-  "name": "rachel-pabwe2026-reactjs",
-  "private": true,
-  "version": "0.0.0",
+  "name": "username-pabwe2026-reactjs",
   "type": "module",
+  "private": true,
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@reduxjs/toolkit": "^2.13.0",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
+    "@reduxjs/toolkit": "^2.12.0",
+    "@tabler/icons-react": "^3.48.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "react-redux": "^9.3.0",
     "react-router-dom": "^7.18.4",
     "sweetalert2": "^11.26.25"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.7",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
     "@vitejs/plugin-react": "^6.1.1",
-    "oxlint": "^1.81.0",
+    "@vitest/coverage-v8": "^5.0.3",
+    "jsdom": "^30.1.1",
     "tailwindcss": "^4.3.3",
-    "vite": "^8.3.0"
+    "vite": "^8.3.1",
+    "vitest": "^5.0.3"
   }
 }

@@ -1,41 +1,28 @@
-import { render } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import { MemoryRouter } from 'react-router-dom';
-import { configureStore } from '@reduxjs/toolkit';
-import authReducer from './features/auth/states/reducer';
-import usersReducer from './features/users/states/reducer';
-import lostFoundsReducer from './features/lost-founds/states/reducer';
-
-export function createTestStore(preloadedState = {}) {
-  return configureStore({
-    reducer: {
-      auth: authReducer,
-      users: usersReducer,
-      lostFounds: lostFoundsReducer,
-    },
-    preloadedState,
-  });
-}
+import React from "react";
+import { render } from "@testing-library/react";
+import { configureStore } from "@reduxjs/toolkit";
+import { Provider } from "react-redux";
+import { MemoryRouter } from "react-router-dom";
+import authReducer from "./features/auth/authSlice";
+import lostFoundsReducer from "./features/lost-founds/lostFoundSlice";
 
 export function renderWithProviders(
   ui,
   {
     preloadedState = {},
-    store = createTestStore(preloadedState),
-    route = '/',
+    store = configureStore({
+      reducer: { auth: authReducer, lostFounds: lostFoundsReducer },
+      preloadedState,
+    }),
     ...renderOptions
   } = {}
 ) {
   function Wrapper({ children }) {
     return (
       <Provider store={store}>
-        <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
+        <MemoryRouter>{children}</MemoryRouter>
       </Provider>
     );
   }
-
-  return {
-    store,
-    ...render(ui, { wrapper: Wrapper, ...renderOptions }),
-  };
+  return { store, ...render(ui, { wrapper: Wrapper, ...renderOptions }) };
 }

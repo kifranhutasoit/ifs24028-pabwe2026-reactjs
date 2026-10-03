@@ -1,11 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import store from './store';
+import { store } from "./store";
 
-describe('store', () => {
-  it('memiliki slice auth, users, dan lostFounds', () => {
+describe("Redux Store", () => {
+  it("should configure the store with auth and lostFounds reducers", () => {
     const state = store.getState();
-    expect(state).toHaveProperty('auth');
-    expect(state).toHaveProperty('users');
-    expect(state).toHaveProperty('lostFounds');
+    expect(state).toHaveProperty("auth");
+    expect(state).toHaveProperty("lostFounds");
   });
 });
