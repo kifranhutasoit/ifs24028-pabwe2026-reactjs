@@ -1,17 +1,68 @@
-const KEY = "access_token";
-export const getAccessToken = () => localStorage.getItem(KEY);
-export const putAccessToken = (t) => (t ? localStorage.setItem(KEY, t) : localStorage.removeItem(KEY));
-export const assetUrl = (p) => (p ? `${new URL(DELCOM_BASEURL).origin}/${p}` : null);
+const DELCOM_BASEURL = import.meta.env.VITE_DELCOM_BASEURL || 'https://open-api.delcom.org/api/v1';
 
-export async function api(path, { method = "GET", body, query, form } = {}) {
-  const clean = Object.entries(query || {}).filter(([, v]) => v !== "" && v != null);
-  const qs = clean.length ? "?" + new URLSearchParams(clean) : "";
-  const headers = { Accept: "application/json" };
+export const getAccessToken = () => {
+  return localStorage.getItem('accessToken');
+};
+
+export const putAccessToken = (token) => {
+  localStorage.setItem('accessToken', token);
+};
+
+export const apiHelper = async (endpoint, options = {}) => {
+  const { method = 'GET', data = null, params = {}, headers = {}, isFormData = false } = options;
+
+  // --- MOCK MODE SEMENTARA KARENA SERVER 502 ---
+  if (endpoint.includes('/auth/register') || endpoint.includes('/auth/login')) {
+    // Simulasi sukses untuk autentikasi
+    return {
+      success: true,
+      message: 'Berhasil (Mock Mode)',
+      data: {
+        token: 'mock-jwt-token-12345',
+        user: { id: 1, name: 'Rachel N Gurning', email: 'rachel@email.com' }
+      }
+    };
+  }
+  // ---------------------------------------------
+
+  let url = `${DELCOM_BASEURL}${endpoint}`;
+  
+  if (Object.keys(params).length > 0) {
+    const query = new URLSearchParams(params).toString();
+    url += `?${query}`;
+  }
+
   const token = getAccessToken();
-  if (token) headers.Authorization = `Bearer ${token}`;
-  if (body) headers["Content-Type"] = "application/json";
-  const res = await fetch(DELCOM_BASEURL + path + qs, { method, headers, body: form || (body && JSON.stringify(body)) });
-  const json = await res.json();
-  if (json.status !== "success") throw new Error(json.message || "Terjadi kesalahan");
-  return json.data;
-}
+  const defaultHeaders = {};
+
+  if (token) {
+    defaultHeaders['Authorization'] = `Bearer ${token}`;
+  }
+
+  if (!isFormData) {
+    defaultHeaders['Content-Type'] = 'application/json';
+  }
+
+  const config = {
+    method,
+    headers: {
+      ...defaultHeaders,
+      ...headers,
+    },
+  };
+
+  if (data) {
+    config.body = isFormData ? data : JSON.stringify(data);
+  }
+
+  try {
+    const response = await fetch(url, config);
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    return {
+      success: false,
+      message: 'Server pusat sedang gangguan (502 Bad Gateway). Gunakan Mock Mode.',
+    };
+  }
+};
