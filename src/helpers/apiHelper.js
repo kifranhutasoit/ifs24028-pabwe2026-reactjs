@@ -1,68 +1,50 @@
-const DELCOM_BASEURL = import.meta.env.VITE_DELCOM_BASEURL || 'https://open-api.delcom.org/api/v1';
+const TOKEN_KEY = 'ACCESS_TOKEN';
 
-export const getAccessToken = () => {
-  return localStorage.getItem('accessToken');
-};
+export function getAccessToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
 
-export const putAccessToken = (token) => {
-  localStorage.setItem('accessToken', token);
-};
+export function putAccessToken(token) {
+  return localStorage.setItem(TOKEN_KEY, token);
+}
 
-export const apiHelper = async (endpoint, options = {}) => {
-  const { method = 'GET', data = null, params = {}, headers = {}, isFormData = false } = options;
+export function removeAccessToken() {
+  return localStorage.removeItem(TOKEN_KEY);
+}
 
-  // --- MOCK MODE SEMENTARA KARENA SERVER 502 ---
-  if (endpoint.includes('/auth/register') || endpoint.includes('/auth/login')) {
-    // Simulasi sukses untuk autentikasi
-    return {
-      success: true,
-      message: 'Berhasil (Mock Mode)',
-      data: {
-        token: 'mock-jwt-token-12345',
-        user: { id: 1, name: 'Rachel N Gurning', email: 'rachel@email.com' }
-      }
-    };
-  }
-  // ---------------------------------------------
-
-  let url = `${DELCOM_BASEURL}${endpoint}`;
-  
-  if (Object.keys(params).length > 0) {
-    const query = new URLSearchParams(params).toString();
-    url += `?${query}`;
-  }
-
+export async function apiHelper(endpoint, options = {}) {
   const token = getAccessToken();
-  const defaultHeaders = {};
-
-  if (token) {
-    defaultHeaders['Authorization'] = `Bearer ${token}`;
-  }
-
-  if (!isFormData) {
-    defaultHeaders['Content-Type'] = 'application/json';
-  }
-
-  const config = {
-    method,
-    headers: {
-      ...defaultHeaders,
-      ...headers,
-    },
+  const headers = {
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...options.headers,
   };
 
-  if (data) {
-    config.body = isFormData ? data : JSON.stringify(data);
+  if (options.body && !(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+    headers['Accept'] = 'application/json';
   }
 
   try {
-    const response = await fetch(url, config);
-    const result = await response.json();
-    return result;
+    const response = await fetch(`${DELCOM_BASEURL}${endpoint}`, {
+      ...options,
+      headers,
+    });
+
+    let responseJson;
+    try {
+      responseJson = await response.json();
+    } catch {
+      responseJson = {
+        status: response.ok ? 'success' : 'fail',
+        message: response.statusText || 'Terjadi kesalahan format respon dari server',
+      };
+    }
+
+    return responseJson;
   } catch (error) {
     return {
-      success: false,
-      message: 'Server pusat sedang gangguan (502 Bad Gateway). Gunakan Mock Mode.',
+      status: 'error',
+      message: error?.message || 'Gagal terhubung ke server. Periksa koneksi internet Anda.',
     };
   }
-};
+}

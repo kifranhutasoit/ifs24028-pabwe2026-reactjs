@@ -1,36 +1,40 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite';
+import { defineConfig, loadEnv } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
-// Meng-inline file CSS hasil build ke <style> di index.html
-// sehingga tidak ada request CSS yang memblokir render awal (render-blocking).
-function inlineCssPlugin() {
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
   return {
-    name: 'inline-critical-css',
-    apply: 'build',
-    transformIndexHtml: {
-      order: 'post',
-      handler(html, ctx) {
-        if (!ctx.bundle) return html;
-        return html.replace(
-          /<link rel="stylesheet"[^>]*?href="([^"]+\.css)"[^>]*>/g,
-          (tag, href) => {
-            const key = href.replace(/^\//, '');
-            const asset = ctx.bundle[key];
-            if (!asset || asset.type !== 'asset') return tag;
-            const css = String(asset.source);
-            delete ctx.bundle[key];
-            return `<style>${css}</style>`;
-          }
-        );
+    plugins: [react(), tailwindcss()],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
       },
     },
-  };
-}
-
-export default defineConfig({
-  plugins: [react(), tailwindcss(), inlineCssPlugin()],
-  build: {
-    cssCodeSplit: false,
-  },
-});
+    server: {
+      host: '0.0.0.0',
+      port: 3000,
+      allowedHosts: true,
+    },
+    define: {
+      DELCOM_BASEURL: JSON.stringify(env.VITE_DELCOM_BASEURL || 'https://open-api.delcom.org/api/v1'),
+    },
+    build: {
+      cssCodeSplit: true,
+      sourcemap: false,
+    },
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: './src/setupTests.js',
+      coverage: {
+        provider: 'v8',
+        reporter: ['text', 'json', 'html'],
+      },
+    },
+  }
+})

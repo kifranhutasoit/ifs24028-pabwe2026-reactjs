@@ -1,12 +1,9 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { asyncGetAuthUser } from './features/auth/states/authSlice';
 
-// Layouts
-import AuthLayout from './features/auth/layouts/AuthLayout';
-import LostFoundLayout from './features/lost-founds/layouts/LostFoundLayout';
-
-// Pages (di-import langsung agar tidak ada rantai request tambahan;
-// ukurannya kecil. Bagian berat -- modal & SweetAlert2 -- tetap lazy-load)
+// Import Layouts & Pages (placeholder/sesuaikan path jika sudah dibuat)
 import LoginPage from './features/auth/pages/LoginPage';
 import RegisterPage from './features/auth/pages/RegisterPage';
 import HomePage from './features/lost-founds/pages/HomePage';
@@ -14,24 +11,46 @@ import DetailPage from './features/lost-founds/pages/DetailPage';
 import UsersPage from './features/users/pages/UsersPage';
 import ProfilePage from './features/users/pages/ProfilePage';
 
-export default function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        {/* Auth Routes */}
-        <Route path="/auth" element={<AuthLayout />}>
-          <Route path="login" element={<LoginPage />} />
-          <Route path="register" element={<RegisterPage />} />
-        </Route>
+import LostFoundLayout from './features/lost-founds/layouts/LostFoundLayout';
 
-        {/* Protected Dashboard Routes */}
-        <Route path="/" element={<LostFoundLayout />}>
-          <Route index element={<HomePage />} />
-          <Route path="lost-founds/:id" element={<DetailPage />} />
-          <Route path="users" element={<UsersPage />} />
-          <Route path="profile" element={<ProfilePage />} />
+const ProtectedRoute = () => {
+  const { isAuthLogin } = useSelector((state) => state.auth);
+  const token = localStorage.getItem('ACCESS_TOKEN');
+
+  if (!token && !isAuthLogin) {
+    return <Navigate to="/auth/login" replace />;
+  }
+  return <Outlet />;
+};
+
+function App() {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(asyncGetAuthUser());
+  }, [dispatch]);
+
+  return (
+    <Routes>
+      {/* Auth Routes */}
+      <Route path="/auth/login" element={<LoginPage />} />
+      <Route path="/auth/register" element={<RegisterPage />} />
+
+      {/* Protected Routes */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<LostFoundLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/lost-founds" element={<HomePage />} />
+          <Route path="/lost-founds/:id" element={<DetailPage />} />
+          <Route path="/users" element={<UsersPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
-      </Routes>
-    </BrowserRouter>
+      </Route>
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
+
+export default App;

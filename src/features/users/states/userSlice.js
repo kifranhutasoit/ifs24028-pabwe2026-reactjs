@@ -1,141 +1,91 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { userApi } from '../api/userApi';
-
-export const asyncGetUsers = createAsyncThunk('users/getAll', async (_, thunkAPI) => {
+import { getAllUsers, getProfileMe, updateProfile, updateProfilePhoto, updatePassword } from '../api/userApi';
+import { showSuccessDialog, showErrorDialog } from "@/helpers/toolsHelper";
+export const asyncGetAllUsers = createAsyncThunk('users/asyncGetAllUsers', async (_, thunkAPI) => {
   try {
-    const response = await userApi.getAllUsers();
-    if (response.success) {
-      return response.data.users;
-    }
+    const response = await getAllUsers();
+    if (response.status === 'success') return response.data.users;
     return thunkAPI.rejectWithValue(response.message);
   } catch (error) {
     return thunkAPI.rejectWithValue(error.message);
   }
 });
 
-export const asyncGetProfile = createAsyncThunk('users/getProfile', async (_, thunkAPI) => {
+export const asyncGetProfileMe = createAsyncThunk('users/asyncGetProfileMe', async (_, thunkAPI) => {
   try {
-    const response = await userApi.getProfile();
-    if (response.success) {
+    const response = await getProfileMe();
+    if (response.status === 'success') return response.data.user;
+    return thunkAPI.rejectWithValue(response.message);
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error.message);
+  }
+});
+
+export const asyncUpdateProfile = createAsyncThunk('users/asyncUpdateProfile', async ({ name }, thunkAPI) => {
+  try {
+    const response = await updateProfile({ name });
+    if (response.status === 'success') {
+      showSuccessDialog('Profil Diperbarui', 'Informasi profil berhasil disimpan.');
       return response.data.user;
     }
+    showErrorDialog('Gagal', response.message);
     return thunkAPI.rejectWithValue(response.message);
   } catch (error) {
+    showErrorDialog('Kesalahan', error.message);
     return thunkAPI.rejectWithValue(error.message);
   }
 });
 
-export const asyncUpdateProfile = createAsyncThunk('users/updateProfile', async ({ name }, thunkAPI) => {
+export const asyncUpdateProfilePhoto = createAsyncThunk('users/asyncUpdateProfilePhoto', async (formData, thunkAPI) => {
   try {
-    const response = await userApi.updateProfile({ name });
-    if (response.success) {
+    const response = await updateProfilePhoto(formData);
+    if (response.status === 'success') {
+      showSuccessDialog('Foto Berhasil Diunggah', 'Avatar profil Anda telah diperbarui.');
       return response.data.user;
     }
+    showErrorDialog('Gagal Unggah', response.message);
     return thunkAPI.rejectWithValue(response.message);
   } catch (error) {
+    showErrorDialog('Kesalahan', error.message);
     return thunkAPI.rejectWithValue(error.message);
   }
 });
 
-export const asyncUpdatePhoto = createAsyncThunk('users/updatePhoto', async (formData, thunkAPI) => {
+export const asyncUpdatePassword = createAsyncThunk('users/asyncUpdatePassword', async (passData, thunkAPI) => {
   try {
-    const response = await userApi.updatePhoto(formData);
-    if (response.success) {
-      return response.data.user;
-    }
-    return thunkAPI.rejectWithValue(response.message);
-  } catch (error) {
-    return thunkAPI.rejectWithValue(error.message);
-  }
-});
-
-export const asyncUpdatePassword = createAsyncThunk('users/updatePassword', async ({ old_password, new_password }, thunkAPI) => {
-  try {
-    const response = await userApi.updatePassword({ old_password, new_password });
-    if (response.success) {
+    const response = await updatePassword(passData);
+    if (response.status === 'success') {
+      showSuccessDialog('Kata Sandi Diubah', 'Sandi baru berhasil disimpan.');
       return response.message;
     }
+    showErrorDialog('Gagal', response.message);
     return thunkAPI.rejectWithValue(response.message);
   } catch (error) {
+    showErrorDialog('Kesalahan', error.message);
     return thunkAPI.rejectWithValue(error.message);
   }
 });
-
-const initialState = {
-  users: [],
-  profile: null,
-  isUsersLoading: false,
-  isProfileLoading: false,
-  isChangeProfile: false,
-  isChangeProfilePhoto: false,
-  isChangeProfilePassword: false,
-  error: null,
-};
 
 const userSlice = createSlice({
   name: 'users',
-  initialState,
-  reducers: {},
+  initialState: {
+    users: [],
+    profile: null,
+    loading: false,
+  },
   extraReducers: (builder) => {
     builder
-      // Get Users
-      .addCase(asyncGetUsers.pending, (state) => {
-        state.isUsersLoading = true;
-      })
-      .addCase(asyncGetUsers.fulfilled, (state, action) => {
-        state.isUsersLoading = false;
+      .addCase(asyncGetAllUsers.fulfilled, (state, action) => {
         state.users = action.payload;
       })
-      .addCase(asyncGetUsers.rejected, (state, action) => {
-        state.isUsersLoading = false;
-        state.error = action.payload;
-      })
-      // Get Profile
-      .addCase(asyncGetProfile.pending, (state) => {
-        state.isProfileLoading = true;
-      })
-      .addCase(asyncGetProfile.fulfilled, (state, action) => {
-        state.isProfileLoading = false;
+      .addCase(asyncGetProfileMe.fulfilled, (state, action) => {
         state.profile = action.payload;
-      })
-      .addCase(asyncGetProfile.rejected, (state, action) => {
-        state.isProfileLoading = false;
-        state.error = action.payload;
-      })
-      // Update Profile
-      .addCase(asyncUpdateProfile.pending, (state) => {
-        state.isChangeProfile = true;
       })
       .addCase(asyncUpdateProfile.fulfilled, (state, action) => {
-        state.isChangeProfile = false;
         state.profile = action.payload;
       })
-      .addCase(asyncUpdateProfile.rejected, (state, action) => {
-        state.isChangeProfile = false;
-        state.error = action.payload;
-      })
-      // Update Photo
-      .addCase(asyncUpdatePhoto.pending, (state) => {
-        state.isChangeProfilePhoto = true;
-      })
-      .addCase(asyncUpdatePhoto.fulfilled, (state, action) => {
-        state.isChangeProfilePhoto = false;
+      .addCase(asyncUpdateProfilePhoto.fulfilled, (state, action) => {
         state.profile = action.payload;
-      })
-      .addCase(asyncUpdatePhoto.rejected, (state, action) => {
-        state.isChangeProfilePhoto = false;
-        state.error = action.payload;
-      })
-      // Update Password
-      .addCase(asyncUpdatePassword.pending, (state) => {
-        state.isChangeProfilePassword = true;
-      })
-      .addCase(asyncUpdatePassword.fulfilled, (state) => {
-        state.isChangeProfilePassword = false;
-      })
-      .addCase(asyncUpdatePassword.rejected, (state, action) => {
-        state.isChangeProfilePassword = false;
-        state.error = action.payload;
       });
   },
 });
