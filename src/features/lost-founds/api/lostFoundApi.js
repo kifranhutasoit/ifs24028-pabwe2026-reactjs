@@ -1,48 +1,95 @@
-import { apiFetch } from '../../../helpers/apiHelper';
+import { apiHelper } from '../../../helpers/apiHelper';
 
-export async function getLostFounds(params = {}) {
-  return apiFetch('/lost-founds', { params });
-}
+const lostFoundApi = (() => {
+  async function getAllLostFounds({ type = '', is_completed = '', is_me = '', search = '' } = {}) {
+    let query = '';
+    const params = new URLSearchParams();
+    if (type) params.append('type', type);
+    if (is_completed !== '') params.append('is_completed', is_completed);
+    if (is_me !== '') params.append('is_me', is_me);
+    if (search) params.append('search', search);
 
-export async function getLostFoundById(id) {
-  return apiFetch(`/lost-founds/${id}`);
-}
+    if (params.toString()) {
+      query = `?${params.toString()}`;
+    }
 
-export async function addLostFound({ title, description, status }) {
-  return apiFetch('/lost-founds', {
-    method: 'POST',
-    body: { title, description, status },
-  });
-}
+    const response = await apiHelper(`/lost-founds${query}`);
+    return response.data;
+  }
 
-export async function updateLostFound(
-  id,
-  { title, description, status, is_completed }
-) {
-  return apiFetch(`/lost-founds/${id}`, {
-    method: 'PUT',
-    body: { title, description, status, is_completed },
-  });
-}
+  async function getLostFoundById(id) {
+    const response = await apiHelper(`/lost-founds/${id}`);
+    return response.data;
+  }
 
-export async function changeCover(id, file) {
-  const formData = new FormData();
-  formData.append('cover', file);
-  return apiFetch(`/lost-founds/${id}/cover`, {
-    method: 'POST',
-    body: formData,
-    isFormData: true,
-  });
-}
+  async function addLostFound({ title, description, type, location, image }) {
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('description', description);
+    formData.append('type', type);
+    formData.append('location', location);
+    if (image) {
+      formData.append('image', image);
+    }
 
-export async function deleteLostFound(id) {
-  return apiFetch(`/lost-founds/${id}`, { method: 'DELETE' });
-}
+    const response = await apiHelper('/lost-founds', {
+      method: 'POST',
+      data: formData,
+      isFormData: true,
+    });
+    return response.data;
+  }
 
-export async function getStatsDaily(params = {}) {
-  return apiFetch('/lost-founds/stats/daily', { params });
-}
+  async function updateLostFound(id, { title, description, type, location, is_completed }) {
+    const response = await apiHelper(`/lost-founds/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      data: JSON.stringify({ title, description, type, location, is_completed }),
+    });
+    return response.data;
+  }
 
-export async function getStatsMonthly(params = {}) {
-  return apiFetch('/lost-founds/stats/monthly', { params });
-}
+  async function updateLostFoundCover(id, image) {
+    const formData = new FormData();
+    formData.append('image', image);
+
+    const response = await apiHelper(`/lost-founds/${id}/cover`, {
+      method: 'POST',
+      data: formData,
+      isFormData: true,
+    });
+    return response.data;
+  }
+
+  async function deleteLostFound(id) {
+    const response = await apiHelper(`/lost-founds/${id}`, {
+      method: 'DELETE',
+    });
+    return response.data;
+  }
+
+  async function getDailyStats() {
+    const response = await apiHelper('/lost-founds/stats/daily');
+    return response.data;
+  }
+
+  async function getMonthlyStats() {
+    const response = await apiHelper('/lost-founds/stats/monthly');
+    return response.data;
+  }
+
+  return {
+    getAllLostFounds,
+    getLostFoundById,
+    addLostFound,
+    updateLostFound,
+    updateLostFoundCover,
+    deleteLostFound,
+    getDailyStats,
+    getMonthlyStats,
+  };
+})();
+
+export default lostFoundApi;

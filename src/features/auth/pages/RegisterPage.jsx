@@ -1,122 +1,99 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { asyncSetIsAuthRegister } from '../states/action';
+import { useDispatch } from 'react-redux';
+import { useNavigate, Link } from 'react-router-dom';
+import { asyncAuthRegister } from '../states/authSlice';
 import useInput from '../../../hooks/useInput';
-import { FiUser, FiMail, FiLock, FiUserPlus } from 'react-icons/fi';
+import { showSuccessDialog, showErrorDialog } from '../../../helpers/toolsHelper';
 
 export default function RegisterPage() {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const { isAuthRegister } = useSelector((state) => state.auth);
   const [name, onNameChange] = useInput('');
   const [email, onEmailChange] = useInput('');
   const [password, onPasswordChange] = useInput('');
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  async function handleSubmit(e) {
+  const onSubmitHandler = async (e) => {
     e.preventDefault();
-    setError('');
-    if (!name.trim() || !email.trim() || !password.trim()) {
-      setError('Semua field wajib diisi');
-      return;
+    setLoading(true);
+    const result = await dispatch(asyncAuthRegister({ name, email, password }));
+    setLoading(false);
+
+    if (asyncAuthRegister.fulfilled.match(result)) {
+      showSuccessDialog('Registrasi Berhasil', 'Silakan masuk dengan akun Anda.');
+      navigate('/auth/login');
+    } else {
+      showErrorDialog('Registrasi Gagal', result.payload || 'Terjadi kesalahan');
     }
-    if (password.length < 6) {
-      setError('Kata sandi minimal 6 karakter');
-      return;
-    }
-    try {
-      await dispatch(asyncSetIsAuthRegister({ name, email, password }));
-      navigate('/auth/login', { replace: true });
-    } catch {
-      // handled by dialog
-    }
-  }
+  };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-8">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-slate-800">Daftar</h2>
-        <p className="text-slate-500 mt-1">Buat akun baru</p>
+    <div>
+      <div className="text-center mb-6">
+        <h1 className="text-2xl font-bold text-slate-800">Daftar Akun Baru</h1>
+        <p className="text-sm text-slate-500">Bergabunglah dengan Sistem Lost & Founds</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {error && (
-          <div className="bg-red-50 text-red-600 text-sm rounded-lg px-4 py-3">
-            {error}
-          </div>
-        )}
-
+      <form onSubmit={onSubmitHandler} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">
-            Nama
-          </label>
-          <div className="relative">
-            <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              value={name}
-              onChange={onNameChange}
-              placeholder="Nama lengkap"
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition"
-              required
-            />
-          </div>
+          <label htmlFor="register-name-input" className="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
+          <input
+            id="register-name-input"
+            type="text"
+            value={name}
+            onChange={onNameChange}
+            required
+            aria-label="Nama Lengkap"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Nama Lengkap Anda"
+          />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">
-            Email
-          </label>
-          <div className="relative">
-            <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="email"
-              value={email}
-              onChange={onEmailChange}
-              placeholder="nama@email.com"
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition"
-              required
-            />
-          </div>
+          <label htmlFor="register-email-input" className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+          <input
+            id="register-email-input"
+            type="email"
+            value={email}
+            onChange={onEmailChange}
+            required
+            aria-label="Alamat Email"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="nama@email.com"
+          />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">
-            Kata Sandi
-          </label>
-          <div className="relative">
-            <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="password"
-              value={password}
-              onChange={onPasswordChange}
-              placeholder="Minimal 6 karakter"
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition"
-              required
-            />
-          </div>
+          <label htmlFor="register-password-input" className="block text-sm font-medium text-slate-700 mb-1">Kata Sandi</label>
+          <input
+            id="register-password-input"
+            type="password"
+            value={password}
+            onChange={onPasswordChange}
+            required
+            aria-label="Kata Sandi"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="••••••••"
+          />
         </div>
 
         <button
+          id="register-submit-button"
           type="submit"
-          disabled={isAuthRegister}
-          className="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 disabled:bg-sky-400 text-white font-semibold py-2.5 rounded-xl transition"
+          disabled={loading}
+          aria-label="Tombol Daftar"
+          className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-200 cursor-pointer disabled:opacity-50"
         >
-          <FiUserPlus />
-          {isAuthRegister ? 'Memproses...' : 'Daftar'}
+          {loading ? 'Memproses...' : 'Daftar'}
         </button>
-      </form>
 
-      <p className="text-center text-sm text-slate-500 mt-6">
-        Sudah punya akun?{' '}
-        <Link
-          to="/auth/login"
-          className="text-sky-600 font-semibold hover:underline"
-        >
-          Masuk
-        </Link>
-      </p>
+        <p className="text-center text-sm text-slate-600 mt-4">
+          Sudah punya akun?{' '}
+          <Link to="/auth/login" className="text-blue-600 font-medium hover:underline">
+            Masuk di sini
+          </Link>
+        </p>
+      </form>
     </div>
   );
 }

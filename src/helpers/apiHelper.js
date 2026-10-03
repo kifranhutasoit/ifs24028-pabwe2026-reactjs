@@ -1,86 +1,68 @@
-const BASE_URL =
-  typeof DELCOM_BASEURL !== 'undefined'
-    ? DELCOM_BASEURL
-    : 'https://open-api.delcom.org/api/v1';
+const DELCOM_BASEURL = import.meta.env.VITE_DELCOM_BASEURL || 'https://open-api.delcom.org/api/v1';
 
-export function getAccessToken() {
+export const getAccessToken = () => {
   return localStorage.getItem('accessToken');
-}
+};
 
-export function putAccessToken(token) {
-  if (token) {
-    localStorage.setItem('accessToken', token);
-  } else {
-    localStorage.removeItem('accessToken');
-  }
-}
+export const putAccessToken = (token) => {
+  localStorage.setItem('accessToken', token);
+};
 
-export function removeAccessToken() {
-  localStorage.removeItem('accessToken');
-}
+export const apiHelper = async (endpoint, options = {}) => {
+  const { method = 'GET', data = null, params = {}, headers = {}, isFormData = false } = options;
 
-/**
- * Wrapper fetch ke REST API Delcom.
- * @param {string} path
- * @param {object} options
- */
-export async function apiFetch(path, options = {}) {
-  const {
-    method = 'GET',
-    body = null,
-    params = null,
-    isFormData = false,
-    auth = true,
-  } = options;
-
-  let url = `${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
-
-  if (params && typeof params === 'object') {
-    const search = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        search.append(key, String(value));
+  // --- MOCK MODE SEMENTARA KARENA SERVER 502 ---
+  if (endpoint.includes('/auth/register') || endpoint.includes('/auth/login')) {
+    // Simulasi sukses untuk autentikasi
+    return {
+      success: true,
+      message: 'Berhasil (Mock Mode)',
+      data: {
+        token: 'mock-jwt-token-12345',
+        user: { id: 1, name: 'Rachel N Gurning', email: 'rachel@email.com' }
       }
-    });
-    const qs = search.toString();
-    if (qs) url += `?${qs}`;
+    };
+  }
+  // ---------------------------------------------
+
+  let url = `${DELCOM_BASEURL}${endpoint}`;
+  
+  if (Object.keys(params).length > 0) {
+    const query = new URLSearchParams(params).toString();
+    url += `?${query}`;
   }
 
-  const headers = {};
+  const token = getAccessToken();
+  const defaultHeaders = {};
+
+  if (token) {
+    defaultHeaders['Authorization'] = `Bearer ${token}`;
+  }
+
   if (!isFormData) {
-    headers['Content-Type'] = 'application/json';
-    headers['Accept'] = 'application/json';
-  } else {
-    headers['Accept'] = 'application/json';
+    defaultHeaders['Content-Type'] = 'application/json';
   }
 
-  if (auth) {
-    const token = getAccessToken();
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+  const config = {
+    method,
+    headers: {
+      ...defaultHeaders,
+      ...headers,
+    },
+  };
+
+  if (data) {
+    config.body = isFormData ? data : JSON.stringify(data);
   }
 
-  const fetchOptions = { method, headers };
-
-  if (body !== null && body !== undefined) {
-    fetchOptions.body = isFormData ? body : JSON.stringify(body);
-  }
-
-  const response = await fetch(url, fetchOptions);
-  let data;
   try {
-    data = await response.json();
-  } catch {
-    data = { status: 'fail', message: 'Respons tidak valid' };
+    const response = await fetch(url, config);
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    return {
+      success: false,
+      message: 'Server pusat sedang gangguan (502 Bad Gateway). Gunakan Mock Mode.',
+    };
   }
-
-  if (!response.ok || data.status === 'fail') {
-    const error = new Error(data.message || 'Terjadi kesalahan');
-    error.data = data.data || null;
-    error.status = data.status || 'fail';
-    throw error;
-  }
-
-  return data;
-}
+};

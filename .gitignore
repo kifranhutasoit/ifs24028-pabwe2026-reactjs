@@ -12,14 +12,6 @@ dist
 dist-ssr
 *.local
 
-# Environment (jangan commit)
-.env
-.env.local
-.env.*.local
-
-# Test coverage
-coverage
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

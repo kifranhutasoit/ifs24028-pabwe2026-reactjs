@@ -1,74 +1,56 @@
-import Swal from 'sweetalert2';
+// SweetAlert2 di-import secara dinamis: hanya diunduh saat dialog pertama kali dipakai
+let swalPromise;
+const getSwal = () => {
+  if (!swalPromise) swalPromise = import('sweetalert2').then((m) => m.default);
+  return swalPromise;
+};
 
-export function showSuccessDialog(title, text = '') {
+export const showSuccessDialog = async (title, text) => {
+  const Swal = await getSwal();
   return Swal.fire({
     icon: 'success',
     title,
     text,
-    confirmButtonColor: '#0ea5e9',
+    timer: 2000,
+    showConfirmButton: false,
   });
-}
+};
 
-export function showErrorDialog(title, text = '') {
+export const showErrorDialog = async (title, text) => {
+  const Swal = await getSwal();
   return Swal.fire({
     icon: 'error',
     title,
     text,
-    confirmButtonColor: '#ef4444',
   });
-}
+};
 
-export function showWarningDialog(title, text = '') {
+export const showWarningDialog = async (title, text) => {
+  const Swal = await getSwal();
   return Swal.fire({
     icon: 'warning',
     title,
     text,
-    confirmButtonColor: '#f59e0b',
   });
-}
+};
 
-export function showConfirmDialog(
-  title,
-  text = '',
-  confirmText = 'Ya',
-  cancelText = 'Batal'
-) {
-  return Swal.fire({
-    icon: 'question',
+export const showConfirmDialog = async (title, text, confirmButtonText = 'Ya, lanjutkan!') => {
+  const Swal = await getSwal();
+  const result = await Swal.fire({
     title,
     text,
+    icon: 'warning',
     showCancelButton: true,
-    confirmButtonColor: '#0ea5e9',
-    cancelButtonColor: '#94a3b8',
-    confirmButtonText: confirmText,
-    cancelButtonText: cancelText,
+    confirmButtonColor: '#aa3bff',
+    cancelButtonColor: '#d33',
+    confirmButtonText,
+    cancelButtonText: 'Batal',
   });
-}
+  return result.isConfirmed;
+};
 
-export function formatDate(dateString) {
+export const formatDate = (dateString) => {
   if (!dateString) return '-';
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleString('id-ID', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return dateString;
-  }
-}
-
-export function coverUrl(cover) {
-  if (!cover) return null;
-  if (cover.startsWith('http')) return cover;
-  return `https://open-api.delcom.org/${cover}`;
-}
-
-export function photoUrl(photo) {
-  if (!photo) return null;
-  if (photo.startsWith('http')) return photo;
-  return `https://open-api.delcom.org/${photo}`;
-}
+  const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+  return new Date(dateString).toLocaleDateString('id-ID', options);
+};

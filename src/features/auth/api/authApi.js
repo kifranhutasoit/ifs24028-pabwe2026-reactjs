@@ -1,23 +1,19 @@
-import { apiFetch } from '../../../helpers/apiHelper';
+import { apiHelper } from '../../../helpers/apiHelper';
 
-export async function login({ email, password }) {
-  return apiFetch('/auth/login', {
-    method: 'POST',
-    body: { email, password },
-    auth: false,
-  });
-}
+export const authApi = {
+  async login({ email, password }) {
+    const response = await apiHelper('/auth/login', {
+      method: 'POST',
+      data: { email, password },
+    });
+    return response;
+  },
 
-export async function register({ name, email, password }) {
-  return apiFetch('/auth/register', {
-    method: 'POST',
-    body: { name, email, password },
-    auth: false,
-  });
-}
-
-export async function logout() {
-  return apiFetch('/auth/logout', {
-    method: 'POST',
-  });
-}
+  async register({ name, email, password }) {
+    const response = await apiHelper('/auth/register', {
+      method: 'POST',
+      data: { name, email, password },
+    });
+    return response;
+  },
+};

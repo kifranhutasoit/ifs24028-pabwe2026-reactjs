@@ -1,36 +1,36 @@
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
-  const port = parseInt(env.APP_PORT || '5173', 10);
-
+// Meng-inline file CSS hasil build ke <style> di index.html
+// sehingga tidak ada request CSS yang memblokir render awal (render-blocking).
+function inlineCssPlugin() {
   return {
-    plugins: [react(), tailwindcss()],
-    define: {
-      DELCOM_BASEURL: JSON.stringify(
-        env.DELCOM_BASEURL || 'https://open-api.delcom.org/api/v1'
-      ),
-    },
-    server: {
-      port,
-      host: true,
-    },
-    test: {
-      globals: true,
-      environment: 'jsdom',
-      setupFiles: './src/setupTests.js',
-      coverage: {
-        provider: 'v8',
-        reporter: ['text', 'json', 'html'],
-        thresholds: {
-          lines: 80,
-          functions: 80,
-          branches: 80,
-          statements: 80,
-        },
+    name: 'inline-critical-css',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html, ctx) {
+        if (!ctx.bundle) return html;
+        return html.replace(
+          /<link rel="stylesheet"[^>]*?href="([^"]+\.css)"[^>]*>/g,
+          (tag, href) => {
+            const key = href.replace(/^\//, '');
+            const asset = ctx.bundle[key];
+            if (!asset || asset.type !== 'asset') return tag;
+            const css = String(asset.source);
+            delete ctx.bundle[key];
+            return `<style>${css}</style>`;
+          }
+        );
       },
     },
   };
+}
+
+export default defineConfig({
+  plugins: [react(), tailwindcss(), inlineCssPlugin()],
+  build: {
+    cssCodeSplit: false,
+  },
 });

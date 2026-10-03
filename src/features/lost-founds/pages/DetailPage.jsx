@@ -1,164 +1,99 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  asyncGetLostFoundById,
-  asyncDeleteLostFound,
-} from '../states/action';
-import {
-  formatDate,
-  coverUrl,
-  showConfirmDialog,
-} from '../../../helpers/toolsHelper';
-import ChangeModal from '../modals/ChangeModal';
-import ChangeCoverModal from '../modals/ChangeCoverModal';
-import {
-  FiArrowLeft,
-  FiEdit2,
-  FiImage,
-  FiTrash2,
-  FiPackage,
-} from 'react-icons/fi';
-
+import { asyncGetLostFoundDetail, asyncDeleteLostFound } from '../states/lostFoundSlice';
+import { formatDate, showConfirmDialog, showSuccessDialog, showErrorDialog } from '../../../helpers/toolsHelper';
+const ChangeModal = lazy(() => import('../components/modals/ChangeModal'));
 export default function DetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { lostFound, isLostFound, isLostFoundDelete } = useSelector(
-    (state) => state.lostFounds
-  );
-  const profile = useSelector((state) => state.users.profile);
-  const [showChange, setShowChange] = useState(false);
-  const [showCover, setShowCover] = useState(false);
+
+  const { lostFound, loading } = useSelector((state) => state.lostFounds);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => {
-    dispatch(asyncGetLostFoundById(id));
+    if (id) {
+      dispatch(asyncGetLostFoundDetail(id));
+    }
   }, [dispatch, id]);
 
-  const isOwner = profile && lostFound && profile.id === lostFound.user_id;
-
-  async function handleDelete() {
-    const result = await showConfirmDialog(
-      'Hapus laporan?',
-      'Tindakan ini tidak dapat dibatalkan.',
-      'Hapus',
-      'Batal'
-    );
-    if (result.isConfirmed) {
-      try {
-        await dispatch(asyncDeleteLostFound(id));
-        navigate('/', { replace: true });
-      } catch {
-        // handled
+  const handleDelete = async () => {
+    const isConfirmed = await showConfirmDialog('Hapus Laporan', 'Apakah kamu yakin ingin menghapus laporan ini?');
+    if (isConfirmed) {
+      const resultAction = await dispatch(asyncDeleteLostFound(id));
+      if (asyncDeleteLostFound.fulfilled.match(resultAction)) {
+        showSuccessDialog('Terhapus!', 'Laporan berhasil dihapus.');
+        navigate('/');
+      } else {
+        showErrorDialog('Gagal', 'Gagal menghapus laporan.');
       }
     }
-  }
+  };
 
-  if (isLostFound || !lostFound) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <div className="w-10 h-10 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin" />
-      </div>
-    );
+  if (loading || !lostFound) {
+    return <div className="text-center py-16 text-gray-500">Memuat rincian laporan...</div>;
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <Link
-        to="/"
-        className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-sky-600"
+    <div className="max-w-4xl mx-auto space-y-6">
+      <button
+        onClick={() => navigate(-1)}
+        className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition"
       >
-        <FiArrowLeft /> Kembali
-      </Link>
+        &larr; Kembali
+      </button>
 
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        <div className="aspect-video bg-slate-100 relative">
-          {lostFound.cover ? (
-            <img
-              src={coverUrl(lostFound.cover)}
-              alt=""
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-slate-300">
-              <FiPackage size={64} />
-            </div>
-          )}
-        </div>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        {lostFound.image_url ? (
+          <img src={lostFound.image_url} alt={lostFound.title} className="w-full h-80 object-cover" />
+        ) : (
+          <div className="w-full h-64 bg-gray-100 flex items-center justify-center text-gray-400">Tidak ada gambar bukti</div>
+        )}
 
         <div className="p-6 space-y-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                lostFound.status === 'lost'
-                  ? 'bg-amber-100 text-amber-800'
-                  : 'bg-emerald-100 text-emerald-800'
-              }`}
-            >
-              {lostFound.status === 'lost' ? 'Hilang' : 'Ditemukan'}
-            </span>
-            {lostFound.is_completed === 1 && (
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-sky-100 text-sky-800">
-                Selesai
+          <div className="flex flex-wrap justify-between items-center gap-2">
+            <div className="flex items-center gap-2">
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${lostFound.type === 'lost' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                {lostFound.type === 'lost' ? 'Barang Hilang' : 'Barang Ditemukan'}
               </span>
-            )}
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${lostFound.is_completed ? 'bg-gray-100 text-gray-600' : 'bg-blue-100 text-blue-700'}`}>
+                {lostFound.is_completed ? 'Selesai' : 'Aktif'}
+              </span>
+            </div>
+            <span className="text-xs text-gray-400">Dilaporkan pada: {formatDate(lostFound.created_at)}</span>
           </div>
 
-          <h1 className="text-2xl font-bold text-slate-800">{lostFound.title}</h1>
-          <p className="text-slate-600 whitespace-pre-wrap leading-relaxed">
-            {lostFound.description}
-          </p>
-
-          <div className="flex flex-wrap gap-4 text-sm text-slate-500 border-t border-slate-100 pt-4">
-            <div>
-              <span className="block text-xs text-slate-400">Pelapor</span>
-              {lostFound.author?.name || '-'}
-            </div>
-            <div>
-              <span className="block text-xs text-slate-400">Dilaporkan</span>
-              {formatDate(lostFound.created_at)}
-            </div>
-            <div>
-              <span className="block text-xs text-slate-400">Diperbarui</span>
-              {formatDate(lostFound.updated_at)}
-            </div>
+          <h1 className="text-2xl font-bold text-gray-800">{lostFound.title}</h1>
+          
+          <div className="text-sm text-gray-600 space-y-1">
+            <p><strong>Lokasi:</strong> 📍 {lostFound.location}</p>
+            <p><strong>Pelapor:</strong> 👤 {lostFound.user?.name || 'Pengguna'}</p>
           </div>
 
-          {isOwner && (
-            <div className="flex flex-wrap gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowChange(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                <FiEdit2 size={16} /> Ubah Data
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowCover(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                <FiImage size={16} /> Ubah Cover
-              </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={isLostFoundDelete}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
-              >
-                <FiTrash2 size={16} /> Hapus
-              </button>
-            </div>
-          )}
+          <div className="border-t pt-4">
+            <h3 className="font-semibold text-gray-700 mb-2">Deskripsi Lengkap</h3>
+            <p className="text-gray-600 leading-relaxed whitespace-pre-line">{lostFound.description}</p>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4 border-t">
+            <button
+              onClick={() => setIsEditModalOpen(true)}
+              className="px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition shadow-sm"
+            >
+              Ubah Laporan
+            </button>
+            <button
+              onClick={handleDelete}
+              className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition shadow-sm"
+            >
+              Hapus Laporan
+            </button>
+          </div>
         </div>
       </div>
 
-      {showChange && (
-        <ChangeModal item={lostFound} onClose={() => setShowChange(false)} />
-      )}
-      {showCover && (
-        <ChangeCoverModal item={lostFound} onClose={() => setShowCover(false)} />
-      )}
+      <ChangeModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} reportData={lostFound} />
     </div>
   );
 }

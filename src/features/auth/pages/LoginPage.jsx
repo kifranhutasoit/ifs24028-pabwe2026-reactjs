@@ -1,111 +1,81 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { asyncSetIsAuthLogin } from '../states/action';
+import { useDispatch } from 'react-redux';
+import { useNavigate, Link } from 'react-router-dom';
+import { asyncAuthLogin } from '../states/authSlice';
 import useInput from '../../../hooks/useInput';
-import { FiMail, FiLock, FiLogIn } from 'react-icons/fi';
+import { showSuccessDialog, showErrorDialog } from '../../../helpers/toolsHelper';
 
 export default function LoginPage() {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const { isAuthLogin } = useSelector((state) => state.auth);
   const [email, onEmailChange] = useInput('');
   const [password, onPasswordChange] = useInput('');
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  async function handleSubmit(e) {
+  const onSubmitHandler = async (e) => {
     e.preventDefault();
-    setError('');
-    if (!email.trim() || !password.trim()) {
-      setError('Email dan kata sandi wajib diisi');
-      return;
-    }
-    try {
-      await dispatch(asyncSetIsAuthLogin({ email, password }));
-      navigate('/', { replace: true });
-    } catch {
-      // error sudah ditampilkan via dialog
-    }
-  }
+    setLoading(true);
+    const result = await dispatch(asyncAuthLogin({ email, password }));
+    setLoading(false);
 
-  return (
-    <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-8">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-slate-800">Masuk</h2>
-        <p className="text-slate-500 mt-1">Selamat datang kembali</p>
+    if (asyncAuthLogin.fulfilled.match(result)) {
+      showSuccessDialog('Berhasil Masuk', 'Selamat datang kembali!');
+      navigate('/');
+    } else {
+      showErrorDialog('Gagal Masuk', result.payload || 'Terjadi kesalahan');
+    }
+  };
+
+    return (
+    <>
+      <div className="text-center mb-6">
+        <h1 className="text-2xl font-bold text-slate-800">Masuk ke Akun</h1>
+        <p className="text-sm text-slate-500">Sistem Lost & Founds</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {error && (
-          <div className="bg-red-50 text-red-600 text-sm rounded-lg px-4 py-3">
-            {error}
-          </div>
-        )}
-
+      <form onSubmit={onSubmitHandler} className="space-y-4">
         <div>
-  <label
-    htmlFor="login-email-input"
-    className="block text-sm font-medium text-slate-700 mb-1.5"
-  >
-    Email
-  </label>
-  <div className="relative">
-    <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-    <input
-      id="login-email-input"
-      type="email"
-      autoComplete="email"
-      value={email}
-      onChange={onEmailChange}
-      placeholder="nama@email.com"
-      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition"
-      required
-    />
-  </div>
-</div>
-
-<div>
-  <label
-    htmlFor="login-password-input"
-    className="block text-sm font-medium text-slate-700 mb-1.5"
-  >
-    Kata Sandi
-  </label>
-  <div className="relative">
-    <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-    <input
-      id="login-password-input"
-      type="password"
-      autoComplete="current-password"
-      value={password}
-      onChange={onPasswordChange}
-      placeholder="••••••••"
-      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition"
-      required
-    />
-  </div>
-</div>
-
-<button
-  id="login-submit-button"
-  type="submit"
-  disabled={isAuthLogin}
-  className="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 disabled:bg-sky-400 text-white font-semibold py-2.5 rounded-xl transition"
->
-  <FiLogIn aria-hidden="true" />
-  {isAuthLogin ? 'Memproses...' : 'Masuk'}
-</button>
-      </form>
-
-      <p className="text-center text-sm text-slate-500 mt-6">
-        Belum punya akun?{' '}
-        <Link
-          to="/auth/register"
-          className="text-sky-600 font-semibold hover:underline"
+          <label htmlFor="login-email-input" className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+          <input
+            id="login-email-input"
+            type="email"
+            value={email}
+            onChange={onEmailChange}
+            required
+            aria-label="Alamat Email"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="nama@email.com"
+          />
+        </div>
+        <div>
+          <label htmlFor="login-password-input" className="block text-sm font-medium text-slate-700 mb-1">Kata Sandi</label>
+          <input
+            id="login-password-input"
+            type="password"
+            value={password}
+            onChange={onPasswordChange}
+            required
+            aria-label="Kata Sandi"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="••••••••"
+          />
+        </div>
+        <button
+          id="login-submit-button"
+          type="submit"
+          disabled={loading}
+          aria-label="Tombol Masuk"
+          className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-200 cursor-pointer disabled:opacity-50"
         >
-          Daftar
-        </Link>
-      </p>
-    </div>
+          {loading ? 'Memproses...' : 'Masuk'}
+        </button>
+        <p className="text-center text-sm text-slate-600 mt-4">
+          Belum punya akun?{' '}
+          <Link to="/auth/register" className="text-blue-600 font-medium hover:underline">
+            Daftar di sini
+          </Link>
+        </p>
+      </form>
+    </>
   );
 }

@@ -1,41 +1,38 @@
-import { apiFetch } from '../../../helpers/apiHelper';
+import { apiHelper } from '../../../helpers/apiHelper';
 
-export async function getUsers() {
-  return apiFetch('/users');
-}
+export const userApi = {
+  async getAllUsers() {
+    const response = await apiHelper('/users', { method: 'GET' });
+    return response;
+  },
 
-export async function getUserById(id) {
-  return apiFetch(`/users/${id}`);
-}
+  async getProfile() {
+    const response = await apiHelper('/users/me', { method: 'GET' });
+    return response;
+  },
 
-export async function getProfile() {
-  return apiFetch('/users/me');
-}
+  async updateProfile({ name }) {
+    const response = await apiHelper('/users/me', {
+      method: 'PUT',
+      data: { name },
+    });
+    return response;
+  },
 
-export async function updateProfile({ name, email }) {
-  return apiFetch('/users/me', {
-    method: 'PUT',
-    body: { name, email },
-  });
-}
+  async updatePhoto(formData) {
+    const response = await apiHelper('/users/me/photo', {
+      method: 'POST',
+      data: formData,
+      isFormData: true,
+    });
+    return response;
+  },
 
-export async function changePhoto(file) {
-  const formData = new FormData();
-  formData.append('photo', file);
-  return apiFetch('/users/me/photo', {
-    method: 'POST',
-    body: formData,
-    isFormData: true,
-  });
-}
-
-export async function changePassword({
-  password,
-  new_password,
-  new_password_confirmation,
-}) {
-  return apiFetch('/users/password', {
-    method: 'PUT',
-    body: { password, new_password, new_password_confirmation },
-  });
-}
+  async updatePassword({ old_password, new_password }) {
+    const response = await apiHelper('/users/me/password', {
+      method: 'PUT',
+      data: { old_password, new_password },
+    });
+    return response;
+  },
+};

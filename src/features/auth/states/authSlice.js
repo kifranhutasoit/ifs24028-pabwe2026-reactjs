@@ -1,122 +1,88 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { login, register, getMe } from '../api/authApi';
-import { getAccessToken, putAccessToken, removeAccessToken } from "@/helpers/apiHelper";
-import { showSuccessDialog, showErrorDialog } from "@/helpers/toolsHelper";
+import { authApi } from '../api/authApi';
+import { putAccessToken, getAccessToken } from '../../../helpers/apiHelper';
 
-export const asyncLoginUser = createAsyncThunk(
-  'auth/asyncLoginUser',
+export const asyncAuthLogin = createAsyncThunk(
+  'auth/login',
   async ({ email, password }, thunkAPI) => {
     try {
-      const response = await login({ email, password });
-      if (response.status === 'success') {
+      const response = await authApi.login({ email, password });
+      if (response.success) {
         putAccessToken(response.data.token);
-        showSuccessDialog('Berhasil Masuk!', 'Selamat datang kembali.');
         return response.data;
-      } else {
-        showErrorDialog('Gagal Masuk', response.message || 'Periksa kembali email dan kata sandi Anda.');
-        return thunkAPI.rejectWithValue(response.message);
       }
+      return thunkAPI.rejectWithValue(response.message);
     } catch (error) {
-      showErrorDialog('Terjadi Kesalahan', error.message);
       return thunkAPI.rejectWithValue(error.message);
     }
   }
 );
 
-export const asyncRegisterUser = createAsyncThunk(
-  'auth/asyncRegisterUser',
-  async ({ name, email, password, password_confirmation }, thunkAPI) => {
+export const asyncAuthRegister = createAsyncThunk(
+  'auth/register',
+  async ({ name, email, password }, thunkAPI) => {
     try {
-      const response = await register({ name, email, password, password_confirmation });
-      if (response.status === 'success') {
-        showSuccessDialog('Registrasi Berhasil!', 'Silakan masuk menggunakan akun baru Anda.');
+      const response = await authApi.register({ name, email, password });
+      if (response.success) {
         return response.data;
-      } else {
-        showErrorDialog('Gagal Registrasi', response.message || 'Periksa kembali data pendaftaran Anda.');
-        return thunkAPI.rejectWithValue(response.message);
       }
+      return thunkAPI.rejectWithValue(response.message);
     } catch (error) {
-      showErrorDialog('Terjadi Kesalahan', error.message);
       return thunkAPI.rejectWithValue(error.message);
     }
   }
 );
 
-export const asyncGetAuthUser = createAsyncThunk(
-  'auth/asyncGetAuthUser',
-  async (_, thunkAPI) => {
-    try {
-      const token = getAccessToken();
-      if (!token) return thunkAPI.rejectWithValue('Token tidak ditemukan');
-      
-      const response = await getMe();
-      if (response.status === 'success') {
-        return response.data;
-      } else {
-        removeAccessToken();
-        return thunkAPI.rejectWithValue(response.message);
-      }
-    } catch (error) {
-      removeAccessToken();
-      return thunkAPI.rejectWithValue(error.message);
-    }
-  }
-);
+const initialState = {
+  authUser: null,
+  token: getAccessToken() || null,
+  isAuthLogin: false,
+  isAuthRegister: false,
+  error: null,
+};
 
 const authSlice = createSlice({
   name: 'auth',
-  initialState: {
-    authUser: null,
-    isAuthLogin: false,
-    isAuthRegister: false,
-    loading: false,
-  },
+  initialState,
   reducers: {
     authLogout: (state) => {
-      removeAccessToken();
       state.authUser = null;
-      state.isAuthLogin = false;
-      showSuccessDialog('Berhasil Keluar', 'Anda telah keluar dari sesi.');
+      state.token = null;
+      localStorage.removeItem('accessToken');
+    },
+    setAuthUser: (state, action) => {
+      state.authUser = action.payload;
     },
   },
   extraReducers: (builder) => {
     builder
       // Login
-      .addCase(asyncLoginUser.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(asyncLoginUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.authUser = action.payload.user || action.payload;
+      .addCase(asyncAuthLogin.pending, (state) => {
         state.isAuthLogin = true;
+        state.error = null;
       })
-      .addCase(asyncLoginUser.rejected, (state) => {
-        state.loading = false;
+      .addCase(asyncAuthLogin.fulfilled, (state, action) => {
         state.isAuthLogin = false;
+        state.token = action.payload.token;
+      })
+      .addCase(asyncAuthLogin.rejected, (state, action) => {
+        state.isAuthLogin = false;
+        state.error = action.payload;
       })
       // Register
-      .addCase(asyncRegisterUser.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(asyncRegisterUser.fulfilled, (state) => {
-        state.loading = false;
+      .addCase(asyncAuthRegister.pending, (state) => {
         state.isAuthRegister = true;
+        state.error = null;
       })
-      .addCase(asyncRegisterUser.rejected, (state) => {
-        state.loading = false;
+      .addCase(asyncAuthRegister.fulfilled, (state) => {
         state.isAuthRegister = false;
       })
-      // Get Me (Session Check)
-      .addCase(asyncGetAuthUser.fulfilled, (state, action) => {
-        state.authUser = action.payload;
-        state.isAuthLogin = true;
-      })
-      .addCase(asyncGetAuthUser.rejected, (state) => {
-        state.authUser = null;
-        state.isAuthLogin = false;
+      .addCase(asyncAuthRegister.rejected, (state, action) => {
+        state.isAuthRegister = false;
+        state.error = action.payload;
       });
   },
 });
 
-export const { authLogout } = authSlice.actions;
+export const { authLogout, setAuthUser } = authSlice.actions;
 export default authSlice.reducer;
