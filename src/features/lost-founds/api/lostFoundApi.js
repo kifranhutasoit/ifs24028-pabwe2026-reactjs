@@ -1,53 +1,48 @@
-import { apiHelper } from "@/helpers/apiHelper";
+import { apiFetch } from '../../../helpers/apiHelper';
 
 export async function getLostFounds(params = {}) {
-  const query = new URLSearchParams(params).toString();
-  const response = await apiHelper(`/lost-founds?${query}`, { method: 'GET' });
-  return response;
+  return apiFetch('/lost-founds', { params });
 }
 
-export async function getLostFoundDetail(id) {
-  const response = await apiHelper(`/lost-founds/${id}`, { method: 'GET' });
-  return response;
+export async function getLostFoundById(id) {
+  return apiFetch(`/lost-founds/${id}`);
 }
 
-export async function addLostFound(data) {
-  const response = await apiHelper('/lost-founds', {
+export async function addLostFound({ title, description, status }) {
+  return apiFetch('/lost-founds', {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: { title, description, status },
   });
-  return response;
 }
 
-export async function updateLostFound(id, data) {
-  const response = await apiHelper(`/lost-founds/${id}`, {
+export async function updateLostFound(
+  id,
+  { title, description, status, is_completed }
+) {
+  return apiFetch(`/lost-founds/${id}`, {
     method: 'PUT',
-    body: JSON.stringify(data),
+    body: { title, description, status, is_completed },
   });
-  return response;
 }
 
-export async function updateLostFoundCover(id, formData) {
-  const response = await apiHelper(`/lost-founds/${id}/cover`, {
+export async function changeCover(id, file) {
+  const formData = new FormData();
+  formData.append('cover', file);
+  return apiFetch(`/lost-founds/${id}/cover`, {
     method: 'POST',
     body: formData,
+    isFormData: true,
   });
-  return response;
 }
 
 export async function deleteLostFound(id) {
-  const response = await apiHelper(`/lost-founds/${id}`, {
-    method: 'DELETE',
-  });
-  return response;
+  return apiFetch(`/lost-founds/${id}`, { method: 'DELETE' });
 }
 
-export async function getLostFoundDailyStats() {
-  const response = await apiHelper('/lost-founds/stats/daily', { method: 'GET' });
-  return response;
+export async function getStatsDaily(params = {}) {
+  return apiFetch('/lost-founds/stats/daily', { params });
 }
 
-export async function getLostFoundMonthlyStats() {
-  const response = await apiHelper('/lost-founds/stats/monthly', { method: 'GET' });
-  return response;
+export async function getStatsMonthly(params = {}) {
+  return apiFetch('/lost-founds/stats/monthly', { params });
 }

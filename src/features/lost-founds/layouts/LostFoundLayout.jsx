@@ -1,69 +1,55 @@
-import { useEffect } from 'react';
-import { Outlet, useNavigate, Link } from 'react-router-dom';
-import { getAccessToken, removeAccessToken } from '../../../helpers/apiHelper';
+import { useEffect, useState } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { getAccessToken } from '../../../helpers/apiHelper';
+import { asyncGetProfile } from '../../users/states/action';
+import NavbarComponent from '../components/NavbarComponent';
+import SidebarComponent from '../components/SidebarComponent';
 
 export default function LostFoundLayout() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const token = getAccessToken();
-    if (!token) {
-      navigate('/auth/login');
+    async function init() {
+      if (!getAccessToken()) {
+        navigate('/auth/login', { replace: true });
+        return;
+      }
+      try {
+        await dispatch(asyncGetProfile());
+        setReady(true);
+      } catch {
+        navigate('/auth/login', { replace: true });
+      }
     }
-  }, [navigate]);
+    init();
+  }, [dispatch, navigate]);
 
-  const handleLogout = () => {
-    removeAccessToken();
-    navigate('/auth/login');
-  };
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin" />
+          <p className="text-slate-500 text-sm">Memuat sesi...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Header & Navigasi */}
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm">
-        <Link
-          to="/"
-          className="text-xl font-bold text-blue-600 hover:text-blue-700 transition min-h-[44px] inline-flex items-center"
-          aria-label="Lost &amp; Founds App Beranda"
-        >
-          Lost &amp; Founds App
-        </Link>
-        <nav aria-label="Menu Utama" className="flex items-center gap-2 sm:gap-4">
-          <Link
-            to="/"
-            className="text-sm font-medium text-slate-700 hover:text-blue-600 transition px-3 py-2 rounded-lg min-h-[44px] inline-flex items-center"
-            aria-label="Halaman Beranda Laporan"
-          >
-            Beranda
-          </Link>
-          <Link
-            to="/users"
-            className="text-sm font-medium text-slate-700 hover:text-blue-600 transition px-3 py-2 rounded-lg min-h-[44px] inline-flex items-center"
-            aria-label="Halaman Daftar Pengguna"
-          >
-            Pengguna
-          </Link>
-          <Link
-            to="/profile"
-            className="text-sm font-medium text-slate-700 hover:text-blue-600 transition px-3 py-2 rounded-lg min-h-[44px] inline-flex items-center"
-            aria-label="Halaman Profil Pengguna"
-          >
-            Profil
-          </Link>
-          <button
-            onClick={handleLogout}
-            type="button"
-            className="px-4 py-2 bg-red-700 hover:bg-red-800 text-white rounded-lg text-sm font-semibold transition min-h-[44px] inline-flex items-center shadow-sm"
-            aria-label="Keluar dari akun"
-          >
-            Keluar
-          </button>
-        </nav>
-      </header>
-
-      {/* Konten Utama Wrapper (div agar tidak bentrok dengan main di page component) */}
-      <div className="flex-1 max-w-7xl w-full mx-auto p-6">
-        <Outlet />
+    <div className="min-h-screen flex flex-col bg-slate-50">
+      <NavbarComponent onToggleSidebar={() => setSidebarOpen((v) => !v)} />
+      <div className="flex flex-1 overflow-hidden">
+        <SidebarComponent
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <Outlet />
+        </main>
       </div>
     </div>
   );

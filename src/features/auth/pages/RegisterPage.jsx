@@ -1,120 +1,122 @@
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
-import { asyncRegisterUser } from '../states/authSlice';
+import { asyncSetIsAuthRegister } from '../states/action';
 import useInput from '../../../hooks/useInput';
-import { showErrorDialog } from '../../../helpers/toolsHelper';
-import useDocumentTitle from '../../../hooks/useDocumentTitle';
+import { FiUser, FiMail, FiLock, FiUserPlus } from 'react-icons/fi';
 
 export default function RegisterPage() {
-  useDocumentTitle(
-    'Daftar Akun Baru - Lost & Founds App',
-    'Daftar akun baru di Lost & Founds App untuk melaporkan atau mengklaim barang yang hilang dan temuan secara transparan.'
-  );
-
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { isAuthRegister } = useSelector((state) => state.auth);
   const [name, onNameChange] = useInput('');
   const [email, onEmailChange] = useInput('');
   const [password, onPasswordChange] = useInput('');
-  const [passwordConfirmation, onPasswordConfirmationChange] = useInput('');
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const { loading } = useSelector((state) => state.auth);
+  const [error, setError] = useState('');
 
-  const onSubmitHandler = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (password !== passwordConfirmation) {
-      showErrorDialog('Gagal', 'Konfirmasi kata sandi tidak cocok!');
+    setError('');
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      setError('Semua field wajib diisi');
       return;
     }
-    const result = await dispatch(
-      asyncRegisterUser({ name, email, password, password_confirmation: passwordConfirmation })
-    );
-    if (asyncRegisterUser.fulfilled.match(result)) {
-      navigate('/auth/login');
+    if (password.length < 6) {
+      setError('Kata sandi minimal 6 karakter');
+      return;
     }
-  };
+    try {
+      await dispatch(asyncSetIsAuthRegister({ name, email, password }));
+      navigate('/auth/login', { replace: true });
+    } catch {
+      // handled by dialog
+    }
+  }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-md p-8 border border-slate-200">
-        <h1 className="text-2xl font-bold text-slate-800 mb-2 text-center">Daftar Akun Baru</h1>
-        <p className="text-sm text-slate-700 mb-6 text-center">Bergabunglah untuk melaporkan barang hilang</p>
-        <form onSubmit={onSubmitHandler} className="space-y-4">
-          <div>
-            <label htmlFor="register-name-input" className="block text-sm font-semibold text-slate-700 mb-1">
-              Nama Lengkap
-            </label>
+    <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-8">
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-bold text-slate-800">Daftar</h2>
+        <p className="text-slate-500 mt-1">Buat akun baru</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {error && (
+          <div className="bg-red-50 text-red-600 text-sm rounded-lg px-4 py-3">
+            {error}
+          </div>
+        )}
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            Nama
+          </label>
+          <div className="relative">
+            <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
-              id="register-name-input"
               type="text"
-              autoComplete="name"
               value={name}
               onChange={onNameChange}
+              placeholder="Nama lengkap"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition"
               required
-              className="w-full px-4 py-3 min-h-[48px] border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-800"
-              placeholder="Nama Anda"
             />
           </div>
-          <div>
-            <label htmlFor="register-email-input" className="block text-sm font-semibold text-slate-700 mb-1">
-              Email
-            </label>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            Email
+          </label>
+          <div className="relative">
+            <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
-              id="register-email-input"
               type="email"
-              autoComplete="email"
               value={email}
               onChange={onEmailChange}
-              required
-              className="w-full px-4 py-3 min-h-[48px] border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-800"
               placeholder="nama@email.com"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition"
+              required
             />
           </div>
-          <div>
-            <label htmlFor="register-password-input" className="block text-sm font-semibold text-slate-700 mb-1">
-              Kata Sandi
-            </label>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            Kata Sandi
+          </label>
+          <div className="relative">
+            <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
-              id="register-password-input"
               type="password"
-              autoComplete="new-password"
               value={password}
               onChange={onPasswordChange}
+              placeholder="Minimal 6 karakter"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition"
               required
-              className="w-full px-4 py-3 min-h-[48px] border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-800"
-              placeholder="••••••••"
             />
           </div>
-          <div>
-            <label htmlFor="register-password-confirmation-input" className="block text-sm font-semibold text-slate-700 mb-1">
-              Konfirmasi Kata Sandi
-            </label>
-            <input
-              id="register-password-confirmation-input"
-              type="password"
-              autoComplete="new-password"
-              value={passwordConfirmation}
-              onChange={onPasswordConfirmationChange}
-              required
-              className="w-full px-4 py-3 min-h-[48px] border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-800"
-              placeholder="••••••••"
-            />
-          </div>
-          <button
-            id="register-submit-button"
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 min-h-[48px] bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition duration-200 disabled:opacity-50"
-          >
-            {loading ? 'Memproses...' : 'Daftar'}
-          </button>
-          <p className="text-center text-sm text-slate-700 mt-4">
-            Sudah punya akun?{' '}
-            <Link to="/auth/login" className="text-blue-700 font-semibold hover:underline inline-block py-1">
-              Masuk ke akun Anda
-            </Link>
-          </p>
-        </form>
-      </div>
-    </main>
+        </div>
+
+        <button
+          type="submit"
+          disabled={isAuthRegister}
+          className="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 disabled:bg-sky-400 text-white font-semibold py-2.5 rounded-xl transition"
+        >
+          <FiUserPlus />
+          {isAuthRegister ? 'Memproses...' : 'Daftar'}
+        </button>
+      </form>
+
+      <p className="text-center text-sm text-slate-500 mt-6">
+        Sudah punya akun?{' '}
+        <Link
+          to="/auth/login"
+          className="text-sky-600 font-semibold hover:underline"
+        >
+          Masuk
+        </Link>
+      </p>
+    </div>
   );
 }

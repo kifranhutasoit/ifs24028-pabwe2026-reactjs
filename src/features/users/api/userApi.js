@@ -1,35 +1,41 @@
-import { apiHelper } from "@/helpers/apiHelper";
+import { apiFetch } from '../../../helpers/apiHelper';
 
-export async function getAllUsers() {
-  const response = await apiHelper('/users', { method: 'GET' });
-  return response;
+export async function getUsers() {
+  return apiFetch('/users');
 }
 
-export async function getProfileMe() {
-  const response = await apiHelper('/users/me', { method: 'GET' });
-  return response;
+export async function getUserById(id) {
+  return apiFetch(`/users/${id}`);
 }
 
-export async function updateProfile({ name }) {
-  const response = await apiHelper('/users/me', {
+export async function getProfile() {
+  return apiFetch('/users/me');
+}
+
+export async function updateProfile({ name, email }) {
+  return apiFetch('/users/me', {
     method: 'PUT',
-    body: JSON.stringify({ name }),
+    body: { name, email },
   });
-  return response;
 }
 
-export async function updateProfilePhoto(formData) {
-  const response = await apiHelper('/users/me/photo', {
+export async function changePhoto(file) {
+  const formData = new FormData();
+  formData.append('photo', file);
+  return apiFetch('/users/me/photo', {
     method: 'POST',
-    body: formData, // FormData berisi file foto
+    body: formData,
+    isFormData: true,
   });
-  return response;
 }
 
-export async function updatePassword({ old_password, password, password_confirmation }) {
-  const response = await apiHelper('/users/me/password', {
+export async function changePassword({
+  password,
+  new_password,
+  new_password_confirmation,
+}) {
+  return apiFetch('/users/password', {
     method: 'PUT',
-    body: JSON.stringify({ old_password, password, password_confirmation }),
+    body: { password, new_password, new_password_confirmation },
   });
-  return response;
 }

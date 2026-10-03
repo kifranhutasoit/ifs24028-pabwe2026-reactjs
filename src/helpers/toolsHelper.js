@@ -1,39 +1,74 @@
 import Swal from 'sweetalert2';
 
-export const showSuccessDialog = (title, text) => {
+export function showSuccessDialog(title, text = '') {
   return Swal.fire({
     icon: 'success',
     title,
     text,
-    timer: 2000,
-    showConfirmButton: false,
+    confirmButtonColor: '#0ea5e9',
   });
-};
+}
 
-export const showErrorDialog = (title, text) => {
+export function showErrorDialog(title, text = '') {
   return Swal.fire({
     icon: 'error',
     title,
     text,
+    confirmButtonColor: '#ef4444',
   });
-};
+}
 
-export const showConfirmDialog = async (title, text) => {
-  const result = await Swal.fire({
+export function showWarningDialog(title, text = '') {
+  return Swal.fire({
     icon: 'warning',
     title,
     text,
-    showCancelButton: true,
-    confirmButtonColor: '#3085d6',
-    cancelButtonColor: '#d33',
-    confirmButtonText: 'Ya, Lanjutkan!',
-    cancelButtonText: 'Batal',
+    confirmButtonColor: '#f59e0b',
   });
-  return result.isConfirmed;
-};
+}
 
-export const formatDate = (dateString) => {
+export function showConfirmDialog(
+  title,
+  text = '',
+  confirmText = 'Ya',
+  cancelText = 'Batal'
+) {
+  return Swal.fire({
+    icon: 'question',
+    title,
+    text,
+    showCancelButton: true,
+    confirmButtonColor: '#0ea5e9',
+    cancelButtonColor: '#94a3b8',
+    confirmButtonText: confirmText,
+    cancelButtonText: cancelText,
+  });
+}
+
+export function formatDate(dateString) {
   if (!dateString) return '-';
-  const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-  return new Date(dateString).toLocaleDateString('id-ID', options);
-};
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return dateString;
+  }
+}
+
+export function coverUrl(cover) {
+  if (!cover) return null;
+  if (cover.startsWith('http')) return cover;
+  return `https://open-api.delcom.org/${cover}`;
+}
+
+export function photoUrl(photo) {
+  if (!photo) return null;
+  if (photo.startsWith('http')) return photo;
+  return `https://open-api.delcom.org/${photo}`;
+}

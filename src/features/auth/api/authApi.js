@@ -1,25 +1,23 @@
-import { apiHelper } from "@/helpers/apiHelper";
-import { showSuccessDialog } from "@/helpers/toolsHelper";
+import { apiFetch } from '../../../helpers/apiHelper';
 
 export async function login({ email, password }) {
-  const response = await apiHelper('/auth/login', {
+  return apiFetch('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: { email, password },
+    auth: false,
   });
-  return response;
 }
 
-export async function register({ name, email, password, password_confirmation }) {
-  const response = await apiHelper('/auth/register', {
+export async function register({ name, email, password }) {
+  return apiFetch('/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ name, email, password, password_confirmation }),
+    body: { name, email, password },
+    auth: false,
   });
-  return response;
 }
 
-export async function getMe() {
-  const response = await apiHelper('/users/me', {
-    method: 'GET',
+export async function logout() {
+  return apiFetch('/auth/logout', {
+    method: 'POST',
   });
-  return response;
 }

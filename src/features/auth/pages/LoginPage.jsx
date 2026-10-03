@@ -1,81 +1,111 @@
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
-import { asyncLoginUser } from '../states/authSlice';
+import { asyncSetIsAuthLogin } from '../states/action';
 import useInput from '../../../hooks/useInput';
-import useDocumentTitle from '../../../hooks/useDocumentTitle';
+import { FiMail, FiLock, FiLogIn } from 'react-icons/fi';
 
 export default function LoginPage() {
-  useDocumentTitle(
-    'Masuk ke Akun - Lost & Founds App',
-    'Masuk ke akun Lost & Founds App Anda untuk melaporkan dan mencari barang hilang atau temuan dengan cepat dan mudah.'
-  );
-
-  const [email, onEmailChange] = useInput('');
-  const [password, onPasswordChange] = useInput('');
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading } = useSelector((state) => state.auth);
+  const { isAuthLogin } = useSelector((state) => state.auth);
+  const [email, onEmailChange] = useInput('');
+  const [password, onPasswordChange] = useInput('');
+  const [error, setError] = useState('');
 
-  const onSubmitHandler = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
-    const result = await dispatch(asyncLoginUser({ email, password }));
-    if (asyncLoginUser.fulfilled.match(result)) {
-      navigate('/');
+    setError('');
+    if (!email.trim() || !password.trim()) {
+      setError('Email dan kata sandi wajib diisi');
+      return;
     }
-  };
+    try {
+      await dispatch(asyncSetIsAuthLogin({ email, password }));
+      navigate('/', { replace: true });
+    } catch {
+      // error sudah ditampilkan via dialog
+    }
+  }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-md p-8 border border-slate-200">
-        <h1 className="text-2xl font-bold text-slate-800 mb-2 text-center">Masuk ke Lost &amp; Founds</h1>
-        <p className="text-sm text-slate-700 mb-6 text-center">Silakan masuk untuk melanjutkan laporan</p>
-        <form onSubmit={onSubmitHandler} className="space-y-4">
-          <div>
-            <label htmlFor="login-email-input" className="block text-sm font-semibold text-slate-700 mb-1">
-              Email
-            </label>
-            <input
-              id="login-email-input"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={onEmailChange}
-              required
-              className="w-full px-4 py-3 min-h-[48px] border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-800"
-              placeholder="nama@email.com"
-            />
-          </div>
-          <div>
-            <label htmlFor="login-password-input" className="block text-sm font-semibold text-slate-700 mb-1">
-              Kata Sandi
-            </label>
-            <input
-              id="login-password-input"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={onPasswordChange}
-              required
-              className="w-full px-4 py-3 min-h-[48px] border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-800"
-              placeholder="••••••••"
-            />
-          </div>
-          <button
-            id="login-submit-button"
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 min-h-[48px] bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition duration-200 disabled:opacity-50"
-          >
-            {loading ? 'Memproses...' : 'Masuk'}
-          </button>
-          <p className="text-center text-sm text-slate-700 mt-4">
-            Belum punya akun?{' '}
-            <Link to="/auth/register" className="text-blue-700 font-semibold hover:underline inline-block py-1">
-              Daftar akun baru
-            </Link>
-          </p>
-        </form>
+    <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-8">
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-bold text-slate-800">Masuk</h2>
+        <p className="text-slate-500 mt-1">Selamat datang kembali</p>
       </div>
-    </main>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {error && (
+          <div className="bg-red-50 text-red-600 text-sm rounded-lg px-4 py-3">
+            {error}
+          </div>
+        )}
+
+        <div>
+  <label
+    htmlFor="login-email-input"
+    className="block text-sm font-medium text-slate-700 mb-1.5"
+  >
+    Email
+  </label>
+  <div className="relative">
+    <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+    <input
+      id="login-email-input"
+      type="email"
+      autoComplete="email"
+      value={email}
+      onChange={onEmailChange}
+      placeholder="nama@email.com"
+      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition"
+      required
+    />
+  </div>
+</div>
+
+<div>
+  <label
+    htmlFor="login-password-input"
+    className="block text-sm font-medium text-slate-700 mb-1.5"
+  >
+    Kata Sandi
+  </label>
+  <div className="relative">
+    <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+    <input
+      id="login-password-input"
+      type="password"
+      autoComplete="current-password"
+      value={password}
+      onChange={onPasswordChange}
+      placeholder="••••••••"
+      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition"
+      required
+    />
+  </div>
+</div>
+
+<button
+  id="login-submit-button"
+  type="submit"
+  disabled={isAuthLogin}
+  className="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 disabled:bg-sky-400 text-white font-semibold py-2.5 rounded-xl transition"
+>
+  <FiLogIn aria-hidden="true" />
+  {isAuthLogin ? 'Memproses...' : 'Masuk'}
+</button>
+      </form>
+
+      <p className="text-center text-sm text-slate-500 mt-6">
+        Belum punya akun?{' '}
+        <Link
+          to="/auth/register"
+          className="text-sky-600 font-semibold hover:underline"
+        >
+          Daftar
+        </Link>
+      </p>
+    </div>
   );
 }

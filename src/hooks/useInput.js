@@ -1,11 +1,16 @@
 import { useState } from 'react';
 
-function useInput(defaultValue = '') {
+/**
+ * Two-way data binding untuk input form.
+ * @param {string} defaultValue
+ * @returns {[string, function, function]} [value, onChange, setValue]
+ */
+export default function useInput(defaultValue = '') {
   const [value, setValue] = useState(defaultValue);
-  const onValueChangeHandler = (event) => {
-    setValue(event.target.value);
-  };
-  return [value, onValueChangeHandler, setValue];
-}
 
-export default useInput;
+  function onChange(event) {
+    setValue(event.target.value);
+  }
+
+  return [value, onChange, setValue];
+}
