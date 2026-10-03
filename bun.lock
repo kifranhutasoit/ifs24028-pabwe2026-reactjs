@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "ifs24044-pabwe2026-reactjs",
+      "name": "ifs24028-pabwe2026-reactjs",
       "dependencies": {
         "@reduxjs/toolkit": "^2.13.0",
         "react": "^19.2.8",
