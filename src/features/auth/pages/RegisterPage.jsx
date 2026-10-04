@@ -1,120 +1,82 @@
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
-import { asyncRegisterUser } from '../states/authSlice';
-import useInput from '../../../hooks/useInput';
-import { showErrorDialog } from '../../../helpers/toolsHelper';
-import useDocumentTitle from '../../../hooks/useDocumentTitle';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { IconLoader2 } from "@tabler/icons-react";
+import useInput from "../../../hooks/useInput";
+import { asyncRegister } from "../states/action";
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const FIELD_CLASS =
+  "w-full rounded-2xl border border-stone-300 bg-stone-50 px-4 py-3 outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100";
+
+function Field({ id, label, error, ...inputProps }) {
+  return (
+    <div>
+      <label htmlFor={id} className="mb-1.5 block text-sm font-bold text-stone-700">
+        {label}
+      </label>
+      <input id={id} className={FIELD_CLASS} {...inputProps} />
+      {error && <p className="mt-1.5 text-sm font-medium text-rose-600">{error}</p>}
+    </div>
+  );
+}
 
 export default function RegisterPage() {
-  useDocumentTitle(
-    'Daftar Akun Baru - Lost & Founds App',
-    'Daftar akun baru di Lost & Founds App untuk melaporkan atau mengklaim barang yang hilang dan temuan secara transparan.'
-  );
-
-  const [name, onNameChange] = useInput('');
-  const [email, onEmailChange] = useInput('');
-  const [password, onPasswordChange] = useInput('');
-  const [passwordConfirmation, onPasswordConfirmationChange] = useInput('');
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading } = useSelector((state) => state.auth);
+  const name = useInput("");
+  const email = useInput("");
+  const password = useInput("");
+  const confirm = useInput("");
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
-  const onSubmitHandler = async (e) => {
-    e.preventDefault();
-    if (password !== passwordConfirmation) {
-      showErrorDialog('Gagal', 'Konfirmasi kata sandi tidak cocok!');
-      return;
-    }
-    const result = await dispatch(
-      asyncRegisterUser({ name, email, password, password_confirmation: passwordConfirmation })
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const found = {};
+    if (name.value.trim().length < 3) found.name = "Nama minimal 3 karakter";
+    if (!EMAIL_PATTERN.test(email.value)) found.email = "Format email tidak valid";
+    if (password.value.length < 6) found.password = "Kata sandi minimal 6 karakter";
+    if (confirm.value !== password.value) found.confirm = "Konfirmasi kata sandi tidak sama";
+    setErrors(found);
+    if (Object.keys(found).length > 0) return;
+
+    setSubmitting(true);
+    const created = await dispatch(
+      asyncRegister({ name: name.value.trim(), email: email.value, password: password.value }),
     );
-    if (asyncRegisterUser.fulfilled.match(result)) {
-      navigate('/auth/login');
-    }
+    setSubmitting(false);
+    if (created) navigate("/auth/login");
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-md p-8 border border-slate-200">
-        <h1 className="text-2xl font-bold text-slate-800 mb-2 text-center">Daftar Akun Baru</h1>
-        <p className="text-sm text-slate-700 mb-6 text-center">Bergabunglah untuk melaporkan barang hilang</p>
-        <form onSubmit={onSubmitHandler} className="space-y-4">
-          <div>
-            <label htmlFor="register-name-input" className="block text-sm font-semibold text-slate-700 mb-1">
-              Nama Lengkap
-            </label>
-            <input
-              id="register-name-input"
-              type="text"
-              autoComplete="name"
-              value={name}
-              onChange={onNameChange}
-              required
-              className="w-full px-4 py-3 min-h-[48px] border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-800"
-              placeholder="Nama Anda"
-            />
-          </div>
-          <div>
-            <label htmlFor="register-email-input" className="block text-sm font-semibold text-slate-700 mb-1">
-              Email
-            </label>
-            <input
-              id="register-email-input"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={onEmailChange}
-              required
-              className="w-full px-4 py-3 min-h-[48px] border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-800"
-              placeholder="nama@email.com"
-            />
-          </div>
-          <div>
-            <label htmlFor="register-password-input" className="block text-sm font-semibold text-slate-700 mb-1">
-              Kata Sandi
-            </label>
-            <input
-              id="register-password-input"
-              type="password"
-              autoComplete="new-password"
-              value={password}
-              onChange={onPasswordChange}
-              required
-              className="w-full px-4 py-3 min-h-[48px] border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-800"
-              placeholder="••••••••"
-            />
-          </div>
-          <div>
-            <label htmlFor="register-password-confirmation-input" className="block text-sm font-semibold text-slate-700 mb-1">
-              Konfirmasi Kata Sandi
-            </label>
-            <input
-              id="register-password-confirmation-input"
-              type="password"
-              autoComplete="new-password"
-              value={passwordConfirmation}
-              onChange={onPasswordConfirmationChange}
-              required
-              className="w-full px-4 py-3 min-h-[48px] border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-800"
-              placeholder="••••••••"
-            />
-          </div>
-          <button
-            id="register-submit-button"
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 min-h-[48px] bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition duration-200 disabled:opacity-50"
-          >
-            {loading ? 'Memproses...' : 'Daftar'}
-          </button>
-          <p className="text-center text-sm text-slate-700 mt-4">
-            Sudah punya akun?{' '}
-            <Link to="/auth/login" className="text-blue-700 font-semibold hover:underline inline-block py-1">
-              Masuk ke akun Anda
-            </Link>
-          </p>
-        </form>
-      </div>
-    </main>
+    <div className="rounded-[2rem] bg-white p-8 shadow-xl shadow-indigo-950/5 ring-1 ring-stone-200">
+      <h1 className="text-3xl font-extrabold text-indigo-950">Buat akun</h1>
+      <p className="mt-2 text-sm text-stone-600">Gabung untuk melaporkan dan membantu mencari barang.</p>
+
+      <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-4">
+        <Field id="reg-name" label="Nama lengkap" value={name.value} onChange={name.onChange} error={errors.name} />
+        <Field id="reg-email" label="Email" type="email" value={email.value} onChange={email.onChange} error={errors.email} />
+        <Field id="reg-password" label="Kata sandi" type="password" value={password.value} onChange={password.onChange} error={errors.password} />
+        <Field id="reg-confirm" label="Ulangi kata sandi" type="password" value={confirm.value} onChange={confirm.onChange} error={errors.confirm} />
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-950 py-3.5 font-bold text-amber-300 transition hover:bg-indigo-900 disabled:opacity-60"
+        >
+          {submitting && <IconLoader2 size={18} className="animate-spin" />}
+          {submitting ? "Memproses…" : "Daftar"}
+        </button>
+      </form>
+
+      <p className="mt-6 text-center text-sm text-stone-600">
+        Sudah punya akun?{" "}
+        <Link to="/auth/login" className="font-bold text-indigo-700 hover:underline">
+          Masuk
+        </Link>
+      </p>
+    </div>
   );
 }

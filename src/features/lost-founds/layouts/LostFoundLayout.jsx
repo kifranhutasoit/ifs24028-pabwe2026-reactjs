@@ -1,70 +1,51 @@
-import { useEffect } from 'react';
-import { Outlet, useNavigate, Link } from 'react-router-dom';
-import { getAccessToken, removeAccessToken } from '../../../helpers/apiHelper';
+import { useEffect, useState } from "react";
+import { Navigate, Outlet } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { IconLoader2 } from "@tabler/icons-react";
+import NavbarComponent from "../components/NavbarComponent";
+import SidebarComponent from "../components/SidebarComponent";
+import { asyncLogout } from "../../auth/states/action";
+import { asyncGetProfile } from "../../users/states/action";
 
+// Route guard: tanpa token -> login; token tidak valid -> sesi dibersihkan.
 export default function LostFoundLayout() {
-  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const token = useSelector((state) => state.auth.token);
+  const profile = useSelector((state) => state.users.profile);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
-    const token = getAccessToken();
-    if (!token) {
-      navigate('/auth/login');
-    }
-  }, [navigate]);
+    if (!token) return;
+    dispatch(asyncGetProfile()).then((valid) => {
+      if (!valid) dispatch(asyncLogout());
+    });
+  }, [token, dispatch]);
 
-  const handleLogout = () => {
-    removeAccessToken();
-    navigate('/auth/login');
-  };
+  const closeDrawer = () => setDrawerOpen(false);
+
+  if (!token) return <Navigate to="/auth/login" replace />;
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen lg:pl-72">
+        <SidebarComponent open={drawerOpen} onClose={closeDrawer} />
+        <main className="mx-auto max-w-6xl px-4 py-6 sm:px-8 sm:py-8">
+          <h1 className="sr-only">Pusat Lost &amp; Found</h1>
+          <p role="status" className="flex items-center justify-center gap-3 py-24 font-semibold text-indigo-950">
+            <IconLoader2 className="animate-spin" /> Memuat sesi…
+          </p>
+        </main>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Header & Navigasi */}
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm">
-        <Link
-          to="/"
-          className="text-xl font-bold text-blue-600 hover:text-blue-700 transition min-h-[44px] inline-flex items-center"
-          aria-label="Lost &amp; Founds App Beranda"
-        >
-          Lost &amp; Founds App
-        </Link>
-        <nav aria-label="Menu Utama" className="flex items-center gap-2 sm:gap-4">
-          <Link
-            to="/"
-            className="text-sm font-medium text-slate-700 hover:text-blue-600 transition px-3 py-2 rounded-lg min-h-[44px] inline-flex items-center"
-            aria-label="Halaman Beranda Laporan"
-          >
-            Beranda
-          </Link>
-          <Link
-            to="/users"
-            className="text-sm font-medium text-slate-700 hover:text-blue-600 transition px-3 py-2 rounded-lg min-h-[44px] inline-flex items-center"
-            aria-label="Halaman Daftar Pengguna"
-          >
-            Pengguna
-          </Link>
-          <Link
-            to="/profile"
-            className="text-sm font-medium text-slate-700 hover:text-blue-600 transition px-3 py-2 rounded-lg min-h-[44px] inline-flex items-center"
-            aria-label="Halaman Profil Pengguna"
-          >
-            Profil
-          </Link>
-          <button
-            onClick={handleLogout}
-            type="button"
-            className="px-4 py-2 bg-red-700 hover:bg-red-800 text-white rounded-lg text-sm font-semibold transition min-h-[44px] inline-flex items-center shadow-sm"
-            aria-label="Keluar dari akun"
-          >
-            Keluar
-          </button>
-        </nav>
-      </header>
-
-      {/* Konten Utama Wrapper (div agar tidak bentrok dengan main di page component) */}
-      <div className="flex-1 max-w-7xl w-full mx-auto p-6">
+    <div className="min-h-screen lg:pl-72">
+      <SidebarComponent open={drawerOpen} onClose={closeDrawer} />
+      <NavbarComponent onOpenMenu={() => setDrawerOpen(true)} />
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-8 sm:py-8">
         <Outlet />
-      </div>
+      </main>
     </div>
   );
 }

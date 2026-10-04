@@ -1,10 +1,22 @@
-import { useDispatch } from "react-redux";
-import Modal from "./Modal";
-import ReportForm from "./ReportForm";
+import { useDispatch, useSelector } from "react-redux";
+import ModalShell from "../../../components/ModalShell";
+import ReportForm from "../components/ReportForm";
 import { asyncAddLostFound } from "../states/action";
 
-export default function AddModal({ onClose, onDone }) {
+export default function AddModal({ onClose, onSaved }) {
   const dispatch = useDispatch();
-  const submit = async (form) => { if (await dispatch(asyncAddLostFound(form))) { onClose(); onDone(); } };
-  return <Modal title="Tambah laporan" onClose={onClose}><ReportForm submitLabel="Simpan laporan" onSubmit={submit} /></Modal>;
+  const busy = useSelector((state) => state.lostFounds.isLostFoundAdd);
+
+  const save = async (payload) => {
+    if (await dispatch(asyncAddLostFound(payload))) {
+      onSaved();
+      onClose();
+    }
+  };
+
+  return (
+    <ModalShell title="Buat laporan baru" subtitle="Ceritakan barang yang hilang atau kamu temukan." onClose={onClose}>
+      <ReportForm busy={busy} submitLabel="Kirim laporan" onSubmit={save} />
+    </ModalShell>
+  );
 }

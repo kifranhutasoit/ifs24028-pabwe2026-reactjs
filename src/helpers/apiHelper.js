@@ -1,50 +1,37 @@
-const TOKEN_KEY = 'ACCESS_TOKEN';
+// Pembungkus fetch untuk REST API Delcom + penyimpanan token di localStorage.
+const TOKEN_SLOT = "temubalik.token";
 
-export function getAccessToken() {
-  return localStorage.getItem(TOKEN_KEY);
-}
+export const getAccessToken = () => localStorage.getItem(TOKEN_SLOT);
+export const putAccessToken = (token) => localStorage.setItem(TOKEN_SLOT, token);
+export const removeAccessToken = () => localStorage.removeItem(TOKEN_SLOT);
 
-export function putAccessToken(token) {
-  return localStorage.setItem(TOKEN_KEY, token);
-}
+export const buildUrl = (path, params = {}) => {
+  // Argumen kedua dibutuhkan agar base URL relatif (mis. "/api-proxy") valid.
+  const url = new URL(`${DELCOM_BASEURL}${path}`, window.location.origin);
+  Object.entries(params)
+    .filter(([, value]) => `${value ?? ""}` !== "")
+    .forEach(([key, value]) => url.searchParams.append(key, value));
+  return url.toString();
+};
 
-export function removeAccessToken() {
-  return localStorage.removeItem(TOKEN_KEY);
-}
-
-export async function apiHelper(endpoint, options = {}) {
+export async function callApi(path, { method = "GET", body, form, params } = {}) {
+  const headers = { Accept: "application/json" };
   const token = getAccessToken();
-  const headers = {
-    ...(token && { Authorization: `Bearer ${token}` }),
-    ...options.headers,
-  };
+  if (token) headers.Authorization = `Bearer ${token}`;
 
-  if (options.body && !(options.body instanceof FormData)) {
-    headers['Content-Type'] = 'application/json';
-    headers['Accept'] = 'application/json';
+  let payload;
+  if (form) {
+    payload = form;
+  } else if (body) {
+    headers["Content-Type"] = "application/json";
+    payload = JSON.stringify(body);
   }
 
-  try {
-    const response = await fetch(`${DELCOM_BASEURL}${endpoint}`, {
-      ...options,
-      headers,
-    });
+  const response = await fetch(buildUrl(path, params), { method, headers, body: payload });
+  const json = await response.json().catch(() => ({}));
 
-    let responseJson;
-    try {
-      responseJson = await response.json();
-    } catch {
-      responseJson = {
-        status: response.ok ? 'success' : 'fail',
-        message: response.statusText || 'Terjadi kesalahan format respon dari server',
-      };
-    }
-
-    return responseJson;
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error?.message || 'Gagal terhubung ke server. Periksa koneksi internet Anda.',
-    };
+  if (!response.ok || json.success === false) {
+    throw new Error(json.message || `Permintaan gagal (${response.status})`);
   }
+  return json;
 }

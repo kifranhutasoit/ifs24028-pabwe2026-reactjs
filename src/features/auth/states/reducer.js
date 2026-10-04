@@ -1,15 +1,23 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { getAccessToken } from "../../../helpers/apiHelper";
 
-const slice = createSlice({
+const authSlice = createSlice({
   name: "auth",
-  initialState: { token: getAccessToken(), user: null },
+  initialState: () => ({ token: getAccessToken(), registered: false }),
   reducers: {
-    isAuthLogin: (s, { payload }) => { s.token = payload.token; s.user = payload.user ?? s.user; },
-    isAuthRegister: (s) => s,
-    isAuthLogout: (s) => { s.token = null; s.user = null; },
-    setProfile: (s, { payload }) => { s.user = payload; },
+    isAuthLogin: (state, { payload }) => {
+      state.token = payload;
+      state.registered = false;
+    },
+    isAuthRegister: (state) => {
+      state.registered = true;
+    },
+    isAuthLogout: (state) => {
+      state.token = null;
+      state.registered = false;
+    },
   },
 });
-export const { isAuthLogin, isAuthRegister, isAuthLogout, setProfile } = slice.actions;
-export default slice.reducer;
+
+export const { isAuthLogin, isAuthRegister, isAuthLogout } = authSlice.actions;
+export default authSlice.reducer;

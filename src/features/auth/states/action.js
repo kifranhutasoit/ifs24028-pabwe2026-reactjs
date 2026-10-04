@@ -1,31 +1,33 @@
-import { loginApi, registerApi, logoutApi } from "../api/authApi";
+import { postLogin, postRegister } from "../api/authApi";
 import { putAccessToken, removeAccessToken } from "../../../helpers/apiHelper";
-import { showErrorDialog, showSuccessDialog, firstFieldError } from "../../../helpers/toolsHelper";
-import { isAuthLogin, isAuthRegister, isAuthLogout } from "./reducer";
+import { showErrorDialog, showSuccessDialog } from "../../../helpers/toolsHelper";
+import { isAuthLogin, isAuthLogout, isAuthRegister } from "./reducer";
 
-export const asyncLogin = (form) => async (dispatch) => {
+export const asyncLogin = (credentials) => async (dispatch) => {
   try {
-    const res = await loginApi(form);
-    const data = res.data ?? {};
-    const token = data.token ?? data.access_token ?? data.accessToken;
-    if (!token) throw new Error("Token tidak ditemukan pada respons login.");
-    putAccessToken(token);
-    dispatch(isAuthLogin({ token, user: data.user }));
+    const { data } = await postLogin(credentials);
+    putAccessToken(data.token);
+    dispatch(isAuthLogin(data.token));
     return true;
-  } catch (e) { showErrorDialog(firstFieldError(e)); return false; }
+  } catch (error) {
+    showErrorDialog(error.message);
+    return false;
+  }
 };
 
-export const asyncRegister = (form) => async (dispatch) => {
+export const asyncRegister = (identity) => async (dispatch) => {
   try {
-    await registerApi(form);
+    await postRegister(identity);
     dispatch(isAuthRegister());
-    await showSuccessDialog("Akun dibuat, silakan masuk.");
+    await showSuccessDialog("Akun berhasil dibuat. Silakan masuk.");
     return true;
-  } catch (e) { showErrorDialog(firstFieldError(e)); return false; }
+  } catch (error) {
+    showErrorDialog(error.message);
+    return false;
+  }
 };
 
-export const asyncLogout = () => async (dispatch) => {
-  try { await logoutApi(); } catch { /* token mungkin sudah kedaluwarsa */ }
+export const asyncLogout = () => (dispatch) => {
   removeAccessToken();
   dispatch(isAuthLogout());
 };

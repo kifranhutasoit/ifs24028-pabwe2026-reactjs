@@ -1,16 +1,37 @@
-# React + Vite
+# TemuBalik — Lost & Founds (ifs24010-pabwe2026-reactjs)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplikasi pelaporan barang hilang & temuan kampus berbasis **ReactJS + Vite**, memakai
+REST API Delcom (`/lost-founds`). State dikelola **Redux Toolkit**, routing **React Router**,
+UI **Tailwind CSS v4**, pengujian **Vitest + React Testing Library** (coverage 100%).
 
-Currently, two official plugins are available:
+## Menjalankan
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+bun install            # atau: npm install
+cp .env.example .env   # opsional; .env bawaan sudah mengarah ke API Delcom
+bun run dev            # http://localhost:3000
+```
 
-## React Compiler
+## Pengujian
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+bun run test           # semua test
+bun run test:coverage  # test + laporan coverage (threshold 100%)
+```
 
-## Expanding the ESLint configuration
+## Build
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+bun run build && bun run preview
+```
+
+## Rute
+
+| Rute | Halaman | Akses |
+| ---- | ------- | ----- |
+| `/auth/login`, `/auth/register` | Masuk / Daftar | Tamu |
+| `/` | Daftar laporan, filter, pencarian, ringkasan | Login |
+| `/?tampilan=statistik` | Statistik harian & bulanan | Login |
+| `/lost-founds/:id` | Detail laporan | Login |
+| `/users` | Daftar pengguna | Login |
+| `/profile` | Profil, foto, kata sandi | Login |

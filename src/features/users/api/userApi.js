@@ -1,35 +1,12 @@
-import { apiHelper } from "@/helpers/apiHelper";
+import { callApi } from "../../../helpers/apiHelper";
 
-export async function getAllUsers() {
-  const response = await apiHelper('/users', { method: 'GET' });
-  return response;
-}
-
-export async function getProfileMe() {
-  const response = await apiHelper('/users/me', { method: 'GET' });
-  return response;
-}
-
-export async function updateProfile({ name }) {
-  const response = await apiHelper('/users/me', {
-    method: 'PUT',
-    body: JSON.stringify({ name }),
-  });
-  return response;
-}
-
-export async function updateProfilePhoto(formData) {
-  const response = await apiHelper('/users/me/photo', {
-    method: 'POST',
-    body: formData, // FormData berisi file foto
-  });
-  return response;
-}
-
-export async function updatePassword({ old_password, password, password_confirmation }) {
-  const response = await apiHelper('/users/me/password', {
-    method: 'PUT',
-    body: JSON.stringify({ old_password, password, password_confirmation }),
-  });
-  return response;
-}
+export const fetchUsers = () => callApi("/users");
+export const fetchMe = () => callApi("/users/me");
+export const putMe = (payload) => callApi("/users/me", { method: "PUT", body: payload });
+export const postMyPhoto = (file) => {
+  const form = new FormData();
+  form.append("photo", file);
+  return callApi("/users/me/photo", { method: "POST", form });
+};
+export const putMyPassword = (payload) =>
+  callApi("/users/me/password", { method: "PUT", body: payload });

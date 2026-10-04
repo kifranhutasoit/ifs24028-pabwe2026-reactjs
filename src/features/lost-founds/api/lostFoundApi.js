@@ -1,53 +1,18 @@
-import { apiHelper } from "@/helpers/apiHelper";
+import { callApi } from "../../../helpers/apiHelper";
 
-export async function getLostFounds(params = {}) {
-  const query = new URLSearchParams(params).toString();
-  const response = await apiHelper(`/lost-founds?${query}`, { method: 'GET' });
-  return response;
-}
+const BASE = "/lost-founds";
 
-export async function getLostFoundDetail(id) {
-  const response = await apiHelper(`/lost-founds/${id}`, { method: 'GET' });
-  return response;
-}
-
-export async function addLostFound(data) {
-  const response = await apiHelper('/lost-founds', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
-  return response;
-}
-
-export async function updateLostFound(id, data) {
-  const response = await apiHelper(`/lost-founds/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  });
-  return response;
-}
-
-export async function updateLostFoundCover(id, formData) {
-  const response = await apiHelper(`/lost-founds/${id}/cover`, {
-    method: 'POST',
-    body: formData,
-  });
-  return response;
-}
-
-export async function deleteLostFound(id) {
-  const response = await apiHelper(`/lost-founds/${id}`, {
-    method: 'DELETE',
-  });
-  return response;
-}
-
-export async function getLostFoundDailyStats() {
-  const response = await apiHelper('/lost-founds/stats/daily', { method: 'GET' });
-  return response;
-}
-
-export async function getLostFoundMonthlyStats() {
-  const response = await apiHelper('/lost-founds/stats/monthly', { method: 'GET' });
-  return response;
-}
+// params: { status: "lost"|"found", is_completed: 1|0, is_me: 1 }
+export const fetchLostFounds = (params) => callApi(BASE, { params });
+export const fetchLostFound = (id) => callApi(`${BASE}/${id}`);
+export const postLostFound = (payload) => callApi(BASE, { method: "POST", body: payload });
+export const putLostFound = (id, payload) =>
+  callApi(`${BASE}/${id}`, { method: "PUT", body: payload });
+export const postLostFoundCover = (id, file) => {
+  const form = new FormData();
+  form.append("cover", file);
+  return callApi(`${BASE}/${id}/cover`, { method: "POST", form });
+};
+export const removeLostFound = (id) => callApi(`${BASE}/${id}`, { method: "DELETE" });
+export const fetchStatsDaily = () => callApi(`${BASE}/stats/daily`);
+export const fetchStatsMonthly = () => callApi(`${BASE}/stats/monthly`);
